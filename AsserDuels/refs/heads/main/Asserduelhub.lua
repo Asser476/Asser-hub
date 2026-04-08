@@ -1,3 +1,0 @@
---discord is https://discord.gg/NT6FtYuYG5
---made By Asser
---dont deobfuscate or skid me >:( Oki?
