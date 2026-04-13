@@ -1,4 +1,3 @@
-illusion hub spawner (ask AI to clean this up)
 local cat1 = game:GetService("Players")
 local cat2 = game:GetService("ReplicatedStorage")
 local cat3 = game:GetService("TweenService")
