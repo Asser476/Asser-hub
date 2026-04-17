@@ -1,0 +1,3379 @@
+-- ts file was generated at discord.gg/25ms
+
+
+local v8 = game:GetService('Players');
+local v9 = game:GetService('UserInputService');
+local v10 = game:GetService('RunService');
+local v11 = game:GetService('TweenService');
+local v12 = game:GetService('CoreGui');
+local v13 = game:GetService('HttpService');
+local v14 = game:GetService('ReplicatedStorage');
+local v15 = game:GetService('Workspace');
+local v16 = game:GetService('Stats');
+local v17 = game:GetService('Lighting');
+local v18 = v8.LocalPlayer;
+local v19 = v18:WaitForChild('PlayerGui');
+local function v20()
+    local v407 = 0 + 0 ;
+    local v408;
+    while true do
+        if (v407 == (1 - 0)) then
+            if v19:FindFirstChild('AsserDuels') then
+                v19:FindFirstChild('AsserDuels'):Destroy();
+            end
+            break;
+        end
+        if (v407 == (421 - (275 + 146))) then
+            v408 = {
+                'AsserDuels',
+                'DropButtonGui',
+                'MobileButtonsGui',
+                'MenuToggleButtonGui',
+                'SpeedConfigGui',
+                'AsserSideMenuGui',
+                'AsserNotifyGui',
+                'RagdollTutorGui',
+                'AsserAutoPlayGui',
+                'StatsDisplay'
+            };
+            for v839, v840 in ipairs(v408) do
+                local v841 = v12:FindFirstChild(v840);
+                if v841 then
+                    v841:Destroy();
+                end
+                local v842 = v19:FindFirstChild(v840);
+                if v842 then
+                    v842:Destroy();
+                end
+            end
+            v407 = 1;
+        end
+    end
+end
+v20();
+local function v21(v409)
+    local v410 = 0;
+    local v411;
+    local v412;
+    local v413;
+    while true do
+        if ((1012 - (53 + 959)) == v410) then
+            v411, v412, v413 = nil;
+            v409.InputBegan:Connect(function(v843)
+                if ((v843.UserInputType == Enum.UserInputType.MouseButton1) or (v843.UserInputType == Enum.UserInputType.Touch)) then
+                    local v934 = 0;
+                    local v935;
+                    while true do
+                        if (v934 == (408 - (312 + 96))) then
+                            v935 = 0 - 0 ;
+                            while true do
+                                if (v935 == (286 - (147 + 138))) then
+                                    v413 = v409.Position;
+                                    v843.Changed:Connect(function()
+                                        if (v843.UserInputState == Enum.UserInputState.End) then
+                                            v411 = false;
+                                        end
+                                    end);
+                                    break;
+                                end
+                                if (v935 == 0) then
+                                    v411 = true;
+                                    v412 = v843.Position;
+                                    v935 = 900 - (813 + 86) ;
+                                end
+                            end
+                            break;
+                        end
+                    end
+                end
+            end);
+            v410 = 1 + 0 ;
+        end
+        if (v410 == 1) then
+            v9.InputChanged:Connect(function(v844)
+                if (v411 and ((v844.UserInputType == Enum.UserInputType.MouseMovement) or (v844.UserInputType == Enum.UserInputType.Touch))) then
+                    local v936 = v844.Position - v412 ;
+                    v409.Position = UDim2.new(v413.X.Scale, v413.X.Offset + v936.X, v413.Y.Scale, v413.Y.Offset + v936.Y);
+                end
+            end);
+            break;
+        end
+    end
+end
+local v22 = Instance.new('ScreenGui');
+v22.Name = 'StatsDisplay';
+v22.ResetOnSpawn = false;
+v22.IgnoreGuiInset = true;
+v22.Parent = v19;
+local v27 = 101 - 46 ;
+local v28 = 26;
+local v29 = Instance.new('Frame', v22);
+v29.Size = UDim2.new(492 - (18 + 474), 54 + 106, 0, v27);
+v29.Position = UDim2.new(0.5 - 0, - 80, 0, 1096 - (860 + 226));
+v29.BackgroundColor3 = Color3.fromRGB(0, 328 - (121 + 182), 9 + 61);
+v29.BorderSizePixel = 1240 - (988 + 252) ;
+v29.ClipsDescendants = true;
+Instance.new('UICorner', v29).CornerRadius = UDim.new(0 + 0, 8);
+local v36 = Instance.new('UIStroke', v29);
+v36.Thickness = 1.5;
+v36.Color = Color3.fromRGB(0, 59 + 129, 2225 - (49 + 1921));
+v36.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+v21(v29);
+local v41 = Instance.new('Frame', v29);
+v41.Size = UDim2.new(891 - (223 + 667), 52 - (51 + 1), 0, v28);
+v41.BackgroundColor3 = Color3.fromRGB(0 - 0, 96 - 51, 1245 - (146 + 979));
+v41.BorderSizePixel = 0 + 0 ;
+Instance.new('UICorner', v41).CornerRadius = UDim.new(0, 613 - (311 + 294));
+local v46 = Instance.new('Frame', v41);
+v46.Size = UDim2.new(2 - 1, 0 + 0, 1443 - (496 + 947), 8);
+v46.Position = UDim2.new(1358 - (1233 + 125), 0 + 0, 1 + 0, - 8);
+v46.BackgroundColor3 = Color3.fromRGB(0, 9 + 36, 120);
+v46.BorderSizePixel = 1645 - (963 + 682) ;
+local v51 = Instance.new('TextLabel', v41);
+v51.Size = UDim2.new(1, - (26 + 4), 1505 - (504 + 1000), 0 + 0);
+v51.Position = UDim2.new(0 + 0, 10, 0 + 0, 0 - 0);
+v51.BackgroundTransparency = 1 + 0 ;
+v51.Text = 'Network Stats';
+v51.TextColor3 = Color3.new(1 + 0, 1, 1);
+v51.Font = Enum.Font.GothamBold;
+v51.TextSize = 10;
+v51.TextXAlignment = Enum.TextXAlignment.Left;
+local v62 = Instance.new('TextButton', v41);
+v62.Size = UDim2.new(0, 18, 182 - (156 + 26), 11 + 7);
+v62.Position = UDim2.new(1 - 0, - 24, 0.5, - (173 - (149 + 15)));
+v62.BackgroundColor3 = Color3.fromRGB(960 - (890 + 70), 237 - (39 + 78), 737 - (14 + 468));
+v62.Text = "-";
+v62.TextColor3 = Color3.new(2 - 1, 2 - 1, 1 + 0);
+v62.Font = Enum.Font.GothamBold;
+v62.TextSize = 9 + 5 ;
+v62.BorderSizePixel = 0 + 0 ;
+Instance.new('UICorner', v62).CornerRadius = UDim.new(0, 3 + 2);
+local v72 = false;
+v62.MouseButton1Click:Connect(function()
+    v72 = not v72;
+    v11:Create(v29, TweenInfo.new(0.2 + 0), {
+        ['Size'] = UDim2.new(0, 160, 0 - 0, (v72 and v28) or v27)
+    }):Play();
+    v62.Text = (v72 and "+") or "-" ;
+end);
+local v73 = Instance.new('TextLabel', v29);
+v73.Size = UDim2.new(1 + 0, 0 - 0, 1 + 0, - v28);
+v73.Position = UDim2.new(0, 51 - (12 + 39), 0 + 0, v28);
+v73.BackgroundTransparency = 1;
+v73.Font = Enum.Font.GothamBold;
+v73.TextSize = 12;
+v73.TextColor3 = Color3.fromRGB(0 - 0, 669 - 481, 76 + 179);
+v73.TextStrokeColor3 = Color3.fromRGB(0 + 0, 0 - 0, 0);
+v73.TextStrokeTransparency = 0.5 + 0 ;
+v73.Text = '0 ping | 0 fps';
+local v83 = 0;
+v10.Heartbeat:Connect(function()
+    local v415 = tick();
+    if ((v415 - v83) >= (0.5 - 0)) then
+        local v669 = 1710 - (1596 + 114) ;
+        local v670;
+        local v671;
+        local v672;
+        while true do
+            if ((0 - 0) == v669) then
+                v83 = v415;
+                v670, v671 = pcall(function()
+                    return math.floor(v16.Network.ServerStatsItem['Data Ping']:GetValue());
+                end);
+                v669 = 714 - (164 + 549) ;
+            end
+            if (v669 == 1) then
+                v672 = math.floor((1439 - (1059 + 379)) / v10.RenderStepped:Wait());
+                v73.Text = ((v670 and v671) or "?") .. ' ping  |  ' .. v672 .. ' fps' ;
+                break;
+            end
+        end
+    end
+end);
+local v84 = false;
+local v85 = false;
+local v86 = 62 - 12 ;
+local v87 = 80;
+local v88 = false;
+local v89 = 19 + 16 ;
+local v90 = nil;
+local v91 = Vector3.new(- (80.58999999999997 + 392), - (399.3 - (145 + 247)), 78.43 + 16);
+local v92 = Vector3.new(- 484.55, - (3.33 + 2), 95.05);
+local v93 = Vector3.new(- (1399.59 - 927), - (2.3 + 5), 94.43);
+local v94 = Vector3.new(- (406.25 + 65), - 6.83, 7.08);
+local v95 = Vector3.new(- (769.02 - 295), - (727.3 - (254 + 466)), 585.55 - (544 + 16));
+local v96 = Vector3.new(- (1537.92 - 1053), - (633.13 - (294 + 334)), 277.53 - (236 + 17));
+local v97 = Vector3.new(- 474.02, - 7.3, 11.55 + 14);
+local v98 = Vector3.new(- 470.93, - 6.83, 88.38 + 25);
+local v99 = {
+    Vector3.new(- (2239.04 - 1766), - (4.99 + 2), 24.71 + 5),
+    Vector3.new(- 483.57, - (1.0999999999999996 + 4), 38.739999999999995 - 20),
+    Vector3.new(- 475, - 6.99, 26.43),
+    Vector3.new(- 474.67, - (1976.94 - (582 + 1388)), 178.48000000000002 - 73)
+};
+local v100 = {
+    Vector3.new(- (836.49 - (326 + 38)), - 7, 266.62 - 176),
+    Vector3.new(- (1104.62 - (47 + 573)), - (2.0999999999999996 + 3), 100.37),
+    Vector3.new(- (2017.08 - 1542), - 7, 150.29000000000002 - 57),
+    Vector3.new(- (966.22 - (76 + 416)), - (449.96 - (319 + 124)), 36.18 - 20)
+};
+local v101 = 57;
+local v102 = 29;
+local v103 = 1064 - (564 + 443) ;
+local v104 = false;
+local v105 = 21 - 13 ;
+local v106 = false;
+local v107 = false;
+local v108 = 459 - (337 + 121) ;
+local v109 = 'none';
+local v110 = 2 - 1 ;
+local v111 = {
+    ['left'] = {
+        Vector3.new(- (2388 - (1261 + 650)), - 6, 40 + 54),
+        Vector3.new(- (757 - 281), - 6, 1911 - (772 + 1045))
+    },
+    ['right'] = {
+        Vector3.new(- 476, - 7, 4 + 22),
+        Vector3.new(- (2319 - (1524 + 320)), - 7, 26)
+    }
+};
+local v112 = false;
+local v113 = nil;
+local v114 = true;
+local v115 = false;
+local v116 = {};
+local v117 = {};
+local v118 = {};
+local v119 = false;
+local v120 = {};
+local v121 = nil;
+local function v122(v416)
+    return v416 and v416:IsA('Animation') and (v416.Name:lower():find('walk') or v416.Name:lower():find('run') or v416.Name:lower():find('jump') or v416.Name:lower():find('swim') or v416.Name:lower():find('fall') or v416.Name:lower():find('climb') or v416.Name:lower():find('idle') or v416.Name:lower():find('land') or v416.Name:lower():find('sit') or v416.Name:lower():find('crouch')) ;
+end
+local function v123(v417)
+    if not v417 then
+        return;
+    end
+    for v640, v641 in ipairs(v417:GetPlayingAnimationTracks()) do
+        local v642 = 0;
+        local v643;
+        while true do
+            if ((1270 - (1049 + 221)) == v642) then
+                v643 = v641.Name:lower();
+                if (v643:find('walk') or v643:find('run') or v643:find('jump') or v643:find('swim') or v643:find('fall') or v643:find('climb') or v643:find('idle') or v643:find('land') or v643:find('sit') or v643:find('crouch')) then
+                    v641:Stop();
+                end
+                break;
+            end
+        end
+    end
+end
+local function v124(v418)
+    local v419 = 156 - (18 + 138) ;
+    while true do
+        if (v419 == (2 - 1)) then
+            v418.AnimationId = "";
+            break;
+        end
+        if (v419 == (1102 - (67 + 1035))) then
+            for v845, v846 in ipairs(v120) do
+                if (v846.instance == v418) then
+                    return;
+                end
+            end
+            table.insert(v120, {
+                ['instance'] = v418,
+                ['id'] = v418.AnimationId
+            });
+            v419 = 349 - (136 + 212) ;
+        end
+    end
+end
+local function v125()
+    for v644, v645 in ipairs(v120) do
+        if v645.instance then
+            v645.instance.AnimationId = v645.id;
+        end
+    end
+end
+local function v126(v420)
+    if (v119 and v122(v420)) then
+        v124(v420);
+    end
+end
+local function v127(v421)
+    local v422 = 0 - 0 ;
+    local v423;
+    local v424;
+    local v425;
+    while true do
+        if (v422 == 4) then
+            v424(v423:FindFirstChild('idle'), 'Animation2');
+            v424(v423:FindFirstChild('sit'), 'SitAnim');
+            v424(v423:FindFirstChild('toolnone'), 'ToolNoneAnim');
+            v422 = 5 + 0 ;
+        end
+        if (v422 == (2 + 0)) then
+            v424(v423:FindFirstChild('jump'), 'JumpAnim');
+            v424(v423:FindFirstChild('swim'), 'Swim');
+            v424(v423:FindFirstChild('swimidle'), 'SwimIdle');
+            v422 = 1607 - (240 + 1364) ;
+        end
+        if ((1082 - (1050 + 32)) == v422) then
+            v423 = v421 and v421:FindFirstChild('Animate') ;
+            if not v423 then
+                return;
+            end
+            v424 = nil;
+            v422 = 3 - 2 ;
+        end
+        if ((3 + 2) == v422) then
+            v424(v423:FindFirstChild('toolsit'), 'ToolSitAnim');
+            v425 = v421:FindFirstChildOfClass('Humanoid');
+            if v425 then
+                v123(v425);
+            end
+            break;
+        end
+        if (v422 == (1058 - (331 + 724))) then
+            v424(v423:FindFirstChild('fall'), 'FallAnim');
+            v424(v423:FindFirstChild('climb'), 'ClimbAnim');
+            v424(v423:FindFirstChild('idle'), 'Animation1');
+            v422 = 4;
+        end
+        if ((1 + 0) == v422) then
+            function v424(v847, v848)
+                local v849 = 0;
+                local v850;
+                while true do
+                    if (v849 == (644 - (269 + 375))) then
+                        v850 = v847 and v847:FindFirstChild(v848) ;
+                        if (v850 and v850:IsA('Animation')) then
+                            v124(v850);
+                        end
+                        break;
+                    end
+                end
+            end
+            v424(v423:FindFirstChild('walk'), 'WalkAnim');
+            v424(v423:FindFirstChild('run'), 'RunAnim');
+            v422 = 2;
+        end
+    end
+end
+local function v128()
+    local v426 = 725 - (267 + 458) ;
+    local v427;
+    while true do
+        if (v426 == (1 + 0)) then
+            v119 = true;
+            v120 = {};
+            v426 = 2;
+        end
+        if (v426 == (3 - 1)) then
+            task.spawn(function()
+                v127(v427);
+                if v121 then
+                    v121:Disconnect();
+                end
+                v121 = v427.DescendantAdded:Connect(v126);
+            end);
+            break;
+        end
+        if (v426 == 0) then
+            v427 = v18.Character;
+            if not v427 then
+                return;
+            end
+            v426 = 819 - (667 + 151) ;
+        end
+    end
+end
+local function v129()
+    local v428 = 0;
+    while true do
+        if (v428 == (1497 - (1410 + 87))) then
+            if v121 then
+                local v886 = 1897 - (1504 + 393) ;
+                while true do
+                    if (v886 == (0 - 0)) then
+                        v121:Disconnect();
+                        v121 = nil;
+                        break;
+                    end
+                end
+            end
+            v125();
+            v428 = 1;
+        end
+        if (v428 == 1) then
+            v120 = {};
+            v119 = false;
+            break;
+        end
+    end
+end
+v18.CharacterAdded:Connect(function(v429)
+    if v119 then
+        task.spawn(function()
+            local v711 = 0 - 0 ;
+            local v712;
+            while true do
+                if (v711 == (796 - (461 + 335))) then
+                    v712 = 0 + 0 ;
+                    while true do
+                        if (v712 == (1762 - (1730 + 31))) then
+                            v121 = v429.DescendantAdded:Connect(v126);
+                            break;
+                        end
+                        if (v712 == 0) then
+                            v127(v429);
+                            if v121 then
+                                v121:Disconnect();
+                            end
+                            v712 = 1668 - (728 + 939) ;
+                        end
+                    end
+                    break;
+                end
+            end
+        end);
+    end
+end);
+v10.Heartbeat:Connect(function()
+    local v430 = 0;
+    local v431;
+    local v432;
+    local v433;
+    local v434;
+    local v435;
+    local v436;
+    local v437;
+    while true do
+        if ((0 - 0) == v430) then
+            if ((v108 ~= (3 - 1)) or (v109 == 'none')) then
+                return;
+            end
+            v431 = v18.Character;
+            v430 = 1;
+        end
+        if (v430 == (9 - 5)) then
+            v437 = (v435 - v436).Magnitude;
+            if (v437 > (1071 - (138 + 930))) then
+                local v887 = (v435 - v436).Unit;
+                local v888 = ((v110 >= (3 + 0)) and v102) or v101 ;
+                v432.AssemblyLinearVelocity = Vector3.new(v887.X * v888, v432.AssemblyLinearVelocity.Y, v887.Z * v888);
+            else
+                v110 = ((v110 == # v433) and 1) or (v110 + 1) ;
+            end
+            break;
+        end
+        if ((2 + 0) == v430) then
+            v433 = ((v109 == 'right') and v99) or v100 ;
+            v434 = v433[v110];
+            v430 = 3 + 0 ;
+        end
+        if (v430 == (12 - 9)) then
+            v435 = Vector3.new(v434.X, 0, v434.Z);
+            v436 = Vector3.new(v432.Position.X, 0, v432.Position.Z);
+            v430 = 1770 - (459 + 1307) ;
+        end
+        if (v430 == (1871 - (474 + 1396))) then
+            local v716 = 0;
+            while true do
+                if (v716 == 1) then
+                    v430 = 2;
+                    break;
+                end
+                if (v716 == (0 - 0)) then
+                    v432 = v431 and v431:FindFirstChild('HumanoidRootPart') ;
+                    if not v432 then
+                        return;
+                    end
+                    v716 = 1 + 0 ;
+                end
+            end
+        end
+    end
+end);
+local v130 = {};
+local v131 = setmetatable({}, {
+    ['__mode'] = "k"
+});
+local v132 = setmetatable({}, {
+    ['__mode'] = "k"
+});
+local v133;
+local v134;
+local function v135(v438)
+    if (not v438 or v132[v438]) then
+        return;
+    end
+    v132[v438] = true;
+    for v646, v647 in pairs(v438:GetPlayingAnimationTracks()) do
+        v647:Stop(0 + 0);
+    end
+    v438.AnimationPlayed:Connect(function(v648)
+        if v133 then
+            v648:Stop(0 - 0);
+        end
+    end);
+end
+local function v136(v440)
+    if v440 then
+        local v673 = 0 + 0 ;
+        while true do
+            if (v673 == (13 - 9)) then
+                v134 = v15.DescendantAdded:Connect(function(v938)
+                    if v938:IsA('Animator') then
+                        v135(v938);
+                    end
+                end);
+                v133 = v10.RenderStepped:Connect(function()
+                    for v972 in pairs(v132) do
+                        if (v972 and v972.Parent) then
+                            for v1021, v1022 in pairs(v972:GetPlayingAnimationTracks()) do
+                                v1022:Stop(0);
+                            end
+                        else
+                            v132[v972] = nil;
+                        end
+                    end
+                end);
+                break;
+            end
+            if (v673 == 3) then
+                for v939, v940 in pairs(v15:GetDescendants()) do
+                    if v940:IsA('Animator') then
+                        v135(v940);
+                    elseif v940:IsA('ParticleEmitter') then
+                        local v1023 = 0 - 0 ;
+                        while true do
+                            if (v1023 == (591 - (562 + 29))) then
+                                v131[v940] = {
+                                    ['Enabled'] = v940.Enabled
+                                };
+                                v940.Enabled = false;
+                                break;
+                            end
+                        end
+                    elseif v940:IsA('Decal') then
+                        local v1055 = 0 + 0 ;
+                        while true do
+                            if ((1419 - (374 + 1045)) == v1055) then
+                                v131[v940] = {
+                                    ['Transparency'] = v940.Transparency
+                                };
+                                v940.Transparency = 1 + 0 ;
+                                break;
+                            end
+                        end
+                    elseif v940:IsA('BasePart') then
+                        v131[v940] = {
+                            ['Material'] = v940.Material,
+                            ['Reflectance'] = v940.Reflectance,
+                            ['CastShadow'] = v940.CastShadow
+                        };
+                        v940.Material = Enum.Material.Plastic;
+                        v940.Reflectance = 0 - 0 ;
+                        v940.CastShadow = false;
+                    end
+                end
+                settings().Rendering.QualityLevel = Enum.QualityLevel.Level01;
+                v673 = 642 - (448 + 190) ;
+            end
+            if (v673 == 2) then
+                v17.EnvironmentDiffuseScale = 0;
+                v17.EnvironmentSpecularScale = 0 + 0 ;
+                v673 = 2 + 1 ;
+            end
+            if (v673 == (1 + 0)) then
+                v17.FogEnd = 999999999;
+                v17.Brightness = 1;
+                v673 = 7 - 5 ;
+            end
+            if (v673 == (0 - 0)) then
+                v130 = {
+                    ['GlobalShadows'] = v17.GlobalShadows,
+                    ['FogEnd'] = v17.FogEnd,
+                    ['Brightness'] = v17.Brightness,
+                    ['EnvironmentDiffuseScale'] = v17.EnvironmentDiffuseScale,
+                    ['EnvironmentSpecularScale'] = v17.EnvironmentSpecularScale
+                };
+                v17.GlobalShadows = false;
+                v673 = 1;
+            end
+        end
+    else
+        local v674 = 0;
+        while true do
+            if (v674 == (1495 - (1307 + 187))) then
+                v131 = setmetatable({}, {
+                    ['__mode'] = "k"
+                });
+                v132 = setmetatable({}, {
+                    ['__mode'] = "k"
+                });
+                v674 = 7 - 5 ;
+            end
+            if (v674 == (4 - 2)) then
+                settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic;
+                if v134 then
+                    v134:Disconnect();
+                    v134 = nil;
+                end
+                v674 = 3;
+            end
+            if (v674 == (8 - 5)) then
+                if v133 then
+                    v133:Disconnect();
+                    v133 = nil;
+                end
+                break;
+            end
+            if (v674 == 0) then
+                if (v130.GlobalShadows ~= nil) then
+                    local v973 = 0;
+                    while true do
+                        if (v973 == 1) then
+                            v17.Brightness = v130.Brightness;
+                            v17.EnvironmentDiffuseScale = v130.EnvironmentDiffuseScale;
+                            v973 = 685 - (232 + 451) ;
+                        end
+                        if (v973 == 0) then
+                            v17.GlobalShadows = v130.GlobalShadows;
+                            v17.FogEnd = v130.FogEnd;
+                            v973 = 1 + 0 ;
+                        end
+                        if (v973 == (2 + 0)) then
+                            v17.EnvironmentSpecularScale = v130.EnvironmentSpecularScale;
+                            break;
+                        end
+                    end
+                end
+                for v941, v942 in pairs(v131) do
+                    if (v941 and v941.Parent) then
+                        local v993 = 564 - (510 + 54) ;
+                        local v994;
+                        while true do
+                            if (v993 == (0 - 0)) then
+                                v994 = 36 - (13 + 23) ;
+                                while true do
+                                    if (v994 == 0) then
+                                        if (v942.Enabled ~= nil) then
+                                            v941.Enabled = v942.Enabled;
+                                        end
+                                        if (v942.Transparency ~= nil) then
+                                            v941.Transparency = v942.Transparency;
+                                        end
+                                        v994 = 1;
+                                    end
+                                    if (v994 == (1 - 0)) then
+                                        if (v942.Material ~= nil) then
+                                            v941.Material = v942.Material;
+                                            v941.Reflectance = v942.Reflectance;
+                                            v941.CastShadow = v942.CastShadow;
+                                        end
+                                        break;
+                                    end
+                                end
+                                break;
+                            end
+                        end
+                    end
+                end
+                v674 = 1 - 0 ;
+            end
+        end
+    end
+end
+local function v137()
+    return v18.Character or v18.CharacterAdded:Wait() ;
+end
+local function v138(v441)
+    local v442 = 0 - 0 ;
+    local v443;
+    while true do
+        if (v442 == (1088 - (830 + 258))) then
+            v443 = v137();
+            v443:PivotTo(CFrame.new(v441[3 - 2 ]));
+            v442 = 1 + 0 ;
+        end
+        if (v442 == (1 + 0)) then
+            task.wait(1441.1 - (860 + 581));
+            v443:PivotTo(CFrame.new(v441[7 - 5 ]));
+            break;
+        end
+    end
+end
+local function v139()
+    local v444 = 0;
+    local v445;
+    while true do
+        local v649 = 0 + 0 ;
+        while true do
+            if (v649 == (241 - (237 + 4))) then
+                if (v444 == 1) then
+                    local v943 = 0;
+                    while true do
+                        if (v943 == (0 - 0)) then
+                            for v1034, v1035 in ipairs(v445:GetChildren()) do
+                                local v1036 = v1035:FindFirstChild('PlotSign');
+                                local v1037 = v1035:FindFirstChild('DeliveryHitbox');
+                                if (v1036 and v1036:FindFirstChild('YourBase') and v1036.YourBase.Enabled and v1037) then
+                                    local v1056 = 0;
+                                    local v1057;
+                                    while true do
+                                        if (v1056 == 0) then
+                                            v1057 = v1035:FindFirstChild('AnimalTarget', true);
+                                            if v1057 then
+                                                return v1057.Position;
+                                            end
+                                            break;
+                                        end
+                                    end
+                                end
+                            end
+                            return nil;
+                        end
+                    end
+                end
+                if (v444 == (0 - 0)) then
+                    local v944 = 0 - 0 ;
+                    while true do
+                        if (v944 == 0) then
+                            v445 = workspace:FindFirstChild('Plots');
+                            if not v445 then
+                                return nil;
+                            end
+                            v944 = 1 + 0 ;
+                        end
+                        if (v944 == (1 + 0)) then
+                            v444 = 3 - 2 ;
+                            break;
+                        end
+                    end
+                end
+                break;
+            end
+        end
+    end
+end
+local function v140()
+    local v446 = v139();
+    if not v446 then
+        return;
+    end
+    local v447 = (v446 - v111.left[1 + 0 ]).Magnitude;
+    local v448 = (v446 - v111.right[1]).Magnitude;
+    if (v447 > v448) then
+        v138(v111.left);
+    else
+        v138(v111.right);
+    end
+end
+local function v141(v449)
+    v113 = v449:WaitForChild('Humanoid');
+    v114 = true;
+    v115 = false;
+end
+if v18.Character then
+    v141(v18.Character);
+end
+v18.CharacterAdded:Connect(v141);
+v10.Heartbeat:Connect(function()
+    local v450 = 0 + 0 ;
+    local v451;
+    while true do
+        if (v450 == (1426 - (85 + 1341))) then
+            if (not v112 or not v113) then
+                return;
+            end
+            v451 = v113:GetState();
+            v450 = 1;
+        end
+        if (v450 == 1) then
+            if (v451 == Enum.HumanoidStateType.Physics) then
+                local v899 = 0;
+                local v900;
+                while true do
+                    if (v899 == (0 - 0)) then
+                        v900 = 0;
+                        while true do
+                            if (v900 == 1) then
+                                v114 = false;
+                                break;
+                            end
+                            if (v900 == (0 - 0)) then
+                                if v114 then
+                                    v140();
+                                end
+                                v115 = true;
+                                v900 = 1;
+                            end
+                        end
+                        break;
+                    end
+                end
+            else
+                local v901 = 372 - (45 + 327) ;
+                local v902;
+                while true do
+                    if (0 == v901) then
+                        v902 = 0 - 0 ;
+                        while true do
+                            if (v902 == (502 - (444 + 58))) then
+                                v115 = false;
+                                v114 = true;
+                                break;
+                            end
+                        end
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+    end
+end);
+local function v142()
+    local v452 = v18.Character;
+    return v452 and v452:FindFirstChild('HumanoidRootPart') ;
+end
+local function v143(v453, v454, v455)
+    local v456 = 0;
+    local v457;
+    while true do
+        if (v456 == (0 + 0)) then
+            v457 = v142();
+            if not v457 then
+                return;
+            end
+            v456 = 1;
+        end
+        if (v456 == (1 + 0)) then
+            while v455() and ((v457.Position - v453).Magnitude > (1 + 1)) do
+                local v851 = 0 - 0 ;
+                local v852;
+                while true do
+                    if (v851 == (1732 - (64 + 1668))) then
+                        v852 = (v453 - v457.Position).Unit;
+                        v457.AssemblyLinearVelocity = Vector3.new(v852.X * v454, v457.AssemblyLinearVelocity.Y, v852.Z * v454);
+                        v851 = 1974 - (1227 + 746) ;
+                    end
+                    if (v851 == (2 - 1)) then
+                        task.wait();
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+    end
+end
+local function v144(v458)
+    local v459 = 0;
+    local v460;
+    local v461;
+    local v462;
+    local v463;
+    while true do
+        if (v459 == (0 - 0)) then
+            v460 = Instance.new('ScreenGui', v12);
+            v460.Name = 'AsserNotifyGui';
+            v461 = Instance.new('Frame', v460);
+            v459 = 1;
+        end
+        if (v459 == (500 - (415 + 79))) then
+            v463.TextSize = 11;
+            v463.TextWrapped = true;
+            v461:TweenPosition(UDim2.new(1 + 0, - (751 - (142 + 349)), 0.85 + 0, 0), 'Out', 'Quad', 0.5, true);
+            v459 = 7;
+        end
+        if (v459 == (9 - 2)) then
+            task.delay(2.5 + 1, function()
+                v461:TweenPosition(UDim2.new(1 + 0, 27 - 17, 1864.85 - (1710 + 154), 318 - (200 + 118)), 'In', 'Quad', 0.5 + 0, true, function()
+                    v460:Destroy();
+                end);
+            end);
+            break;
+        end
+        if (v459 == 2) then
+            v461.BorderSizePixel = 0;
+            Instance.new('UICorner', v461).CornerRadius = UDim.new(0, 8);
+            v462 = Instance.new('UIStroke', v461);
+            v459 = 5 - 2 ;
+        end
+        if (v459 == (1 - 0)) then
+            local v722 = 0 + 0 ;
+            while true do
+                if ((0 + 0) == v722) then
+                    v461.Size = UDim2.new(0, 250, 0 + 0, 8 + 42);
+                    v461.Position = UDim2.new(2 - 1, 1260 - (363 + 887), 0.85 - 0, 0 - 0);
+                    v722 = 1;
+                end
+                if (v722 == (1 + 0)) then
+                    v461.BackgroundColor3 = Color3.fromRGB(0 - 0, 18 + 7, 70);
+                    v459 = 1666 - (674 + 990) ;
+                    break;
+                end
+            end
+        end
+        if (v459 == (2 + 2)) then
+            v463.Size = UDim2.new(1 + 0, - (31 - 11), 1056 - (507 + 548), 837 - (289 + 548));
+            v463.Position = UDim2.new(0, 1828 - (821 + 997), 0, 0);
+            v463.BackgroundTransparency = 256 - (195 + 60) ;
+            v459 = 5;
+        end
+        if (v459 == 3) then
+            v462.Thickness = 1.5;
+            v462.Color = Color3.fromRGB(0 + 0, 1689 - (251 + 1250), 747 - 492);
+            v463 = Instance.new('TextLabel', v461);
+            v459 = 3 + 1 ;
+        end
+        if (v459 == (1037 - (809 + 223))) then
+            v463.Text = v458;
+            v463.TextColor3 = Color3.new(1 - 0, 2 - 1, 1);
+            v463.Font = Enum.Font.GothamBold;
+            v459 = 19 - 13 ;
+        end
+    end
+end
+local function v145(v464)
+    local v465 = 0 + 0 ;
+    local v466;
+    local v467;
+    local v468;
+    while true do
+        if (v465 == (2 + 1)) then
+            v468.Transparency = 617.6 - (14 + 603) ;
+            v468.ZIndex = 10;
+            v468.AlwaysOnTop = true;
+            v465 = 133 - (118 + 11) ;
+        end
+        if (v465 == (1 + 3)) then
+            v468.Parent = v466;
+            break;
+        end
+        if (v465 == (1 + 0)) then
+            local v736 = 0;
+            while true do
+                if (v736 == 0) then
+                    if (not v467 or v466:FindFirstChild('TrackHitboxAdornment')) then
+                        return;
+                    end
+                    v468 = Instance.new('BoxHandleAdornment');
+                    v736 = 2 - 1 ;
+                end
+                if (v736 == (950 - (551 + 398))) then
+                    v468.Name = 'TrackHitboxAdornment';
+                    v465 = 2 + 0 ;
+                    break;
+                end
+            end
+        end
+        if (v465 == (1 + 1)) then
+            v468.Adornee = v467;
+            v468.Size = Vector3.new(4 + 0, 6, 7 - 5);
+            v468.Color3 = Color3.fromRGB(0, 432 - 244, 83 + 172);
+            v465 = 11 - 8 ;
+        end
+        if (v465 == (0 + 0)) then
+            if ((v464 == v18) or not v464.Character) then
+                return;
+            end
+            v466 = v464.Character;
+            v467 = v466:FindFirstChild('HumanoidRootPart');
+            v465 = 90 - (40 + 49) ;
+        end
+    end
+end
+local function v146()
+    for v650, v651 in ipairs(v8:GetPlayers()) do
+        if (v651 ~= v18) then
+            local v741 = 0 - 0 ;
+            local v742;
+            while true do
+                if (0 == v741) then
+                    v742 = 490 - (99 + 391) ;
+                    while true do
+                        if ((0 + 0) == v742) then
+                            if v651.Character then
+                                v145(v651);
+                            end
+                            v651.CharacterAdded:Connect(function()
+                                local v1038 = 0 - 0 ;
+                                while true do
+                                    if (v1038 == 0) then
+                                        task.wait(0.1 - 0);
+                                        v145(v651);
+                                        break;
+                                    end
+                                end
+                            end);
+                            break;
+                        end
+                    end
+                    break;
+                end
+            end
+        end
+    end
+    v8.PlayerAdded:Connect(function(v652)
+        if (v652 == v18) then
+            return;
+        end
+        v652.CharacterAdded:Connect(function()
+            local v675 = 0;
+            local v676;
+            while true do
+                if (v675 == (0 + 0)) then
+                    v676 = 0 - 0 ;
+                    while true do
+                        if (v676 == (1604 - (1032 + 572))) then
+                            task.wait(0.1);
+                            v145(v652);
+                            break;
+                        end
+                    end
+                    break;
+                end
+            end
+        end);
+    end);
+end
+local v147 = 457 - (203 + 214) ;
+local v148 = 1862 - (568 + 1249) ;
+local v149;
+local v150;
+local v151;
+local function v152()
+    local v469 = 0 + 0 ;
+    local v470;
+    local v471;
+    local v472;
+    local v473;
+    local v474;
+    while true do
+        if (0 == v469) then
+            v470 = 0 - 0 ;
+            v471 = nil;
+            v469 = 3 - 2 ;
+        end
+        if ((1307 - (913 + 393)) == v469) then
+            v472 = nil;
+            v473 = nil;
+            v469 = 5 - 3 ;
+        end
+        if (v469 == (2 - 0)) then
+            v474 = nil;
+            while true do
+                if (0 == v470) then
+                    v471 = v18.Character;
+                    if (not v471 or not v471:FindFirstChild('HumanoidRootPart')) then
+                        return nil;
+                    end
+                    v470 = 1;
+                end
+                if (v470 == (412 - (269 + 141))) then
+                    v474 = v147;
+                    for v976, v977 in ipairs(v8:GetPlayers()) do
+                        if ((v977 ~= v18) and v977.Character and v977.Character:FindFirstChild('HumanoidRootPart')) then
+                            local v1010 = v977.Character.HumanoidRootPart;
+                            local v1011 = (v1010.Position - v472.Position).Magnitude;
+                            if (v1011 <= v474) then
+                                v474 = v1011;
+                                v473 = v1010;
+                            end
+                        end
+                    end
+                    v470 = 6 - 3 ;
+                end
+                if (v470 == (1982 - (362 + 1619))) then
+                    local v950 = 1625 - (950 + 675) ;
+                    while true do
+                        if (v950 == (0 + 0)) then
+                            v472 = v471.HumanoidRootPart;
+                            v473 = nil;
+                            v950 = 1180 - (216 + 963) ;
+                        end
+                        if (v950 == (1288 - (485 + 802))) then
+                            v470 = 561 - (432 + 127) ;
+                            break;
+                        end
+                    end
+                end
+                if (v470 == (1076 - (1065 + 8))) then
+                    return v473;
+                end
+            end
+            break;
+        end
+    end
+end
+local function v153()
+    local v475 = 0 + 0 ;
+    local v476;
+    local v477;
+    local v478;
+    while true do
+        if ((1602 - (635 + 966)) == v475) then
+            v478 = v476:FindFirstChildOfClass('Humanoid');
+            if (not v477 or not v478) then
+                return;
+            end
+            v478.AutoRotate = false;
+            v151 = Instance.new('Attachment', v477);
+            v475 = 2 + 0 ;
+        end
+        if (v475 == (42 - (5 + 37))) then
+            if v149 then
+                return;
+            end
+            v476 = v18.Character;
+            if not v476 then
+                return;
+            end
+            v477 = v476:FindFirstChild('HumanoidRootPart');
+            v475 = 1;
+        end
+        if (v475 == 3) then
+            v150.MaxTorque = math.huge;
+            v150.Responsiveness = 200;
+            v150.Parent = v477;
+            v149 = v10.RenderStepped:Connect(function()
+                local v853 = v152();
+                if not v853 then
+                    return;
+                end
+                local v854 = (v853.Position - v477.Position).Magnitude;
+                if (v854 > v148) then
+                    return;
+                end
+                local v855 = Vector3.new(v853.Position.X, v477.Position.Y, v853.Position.Z);
+                v150.CFrame = CFrame.lookAt(v477.Position, v855);
+            end);
+            break;
+        end
+        if ((4 - 2) == v475) then
+            v150 = Instance.new('AlignOrientation');
+            v150.Attachment0 = v151;
+            v150.Mode = Enum.OrientationAlignmentMode.OneAttachment;
+            v150.RigidityEnabled = true;
+            v475 = 2 + 1 ;
+        end
+    end
+end
+local function v154()
+    if v149 then
+        local v677 = 0 - 0 ;
+        local v678;
+        while true do
+            if (v677 == 0) then
+                v678 = 0 + 0 ;
+                while true do
+                    if ((0 - 0) == v678) then
+                        v149:Disconnect();
+                        v149 = nil;
+                        break;
+                    end
+                end
+                break;
+            end
+        end
+    end
+    if v150 then
+        local v679 = 0 - 0 ;
+        local v680;
+        while true do
+            if (v679 == (0 - 0)) then
+                v680 = 0 - 0 ;
+                while true do
+                    if (v680 == (0 + 0)) then
+                        v150:Destroy();
+                        v150 = nil;
+                        break;
+                    end
+                end
+                break;
+            end
+        end
+    end
+    if v151 then
+        v151:Destroy();
+        v151 = nil;
+    end
+    local v479 = v18.Character;
+    if v479 then
+        local v681 = 529 - (318 + 211) ;
+        local v682;
+        while true do
+            if ((0 - 0) == v681) then
+                v682 = v479:FindFirstChildOfClass('Humanoid');
+                if v682 then
+                    v682.AutoRotate = true;
+                end
+                break;
+            end
+        end
+    end
+end
+local function v155()
+    local v480 = 1587 - (963 + 624) ;
+    local v481;
+    while true do
+        if (v480 == 1) then
+            if (v481 and v481:FindFirstChild('HumanoidRootPart')) then
+                v481.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0 + 0, 846 - (518 + 328), 0 - 0);
+            end
+            break;
+        end
+        if (v480 == 0) then
+            if v90 then
+                local v904 = 0 - 0 ;
+                while true do
+                    if (v904 == (317 - (301 + 16))) then
+                        v90:Disconnect();
+                        v90 = nil;
+                        break;
+                    end
+                end
+            end
+            v481 = v18.Character;
+            v480 = 2 - 1 ;
+        end
+    end
+end
+local function v156()
+    if v90 then
+        v90:Disconnect();
+    end
+    v90 = v10.Heartbeat:Connect(function()
+        if not v88 then
+            return;
+        end
+        local v653 = v18.Character;
+        if (not v653 or not v653:FindFirstChild('HumanoidRootPart')) then
+            return;
+        end
+        local v654 = v653.HumanoidRootPart;
+        local v655, v656 = nil, math.huge;
+        for v683, v684 in pairs(v8:GetPlayers()) do
+            if ((v684 ~= v18) and v684.Character and v684.Character:FindFirstChild('HumanoidRootPart')) then
+                local v857 = (v654.Position - v684.Character.HumanoidRootPart.Position).Magnitude;
+                if (v857 < v656) then
+                    local v951 = 0 - 0 ;
+                    while true do
+                        if (v951 == (0 - 0)) then
+                            v656 = v857;
+                            v655 = v684;
+                            break;
+                        end
+                    end
+                end
+            end
+        end
+        if (v655 and v655.Character and v655.Character:FindFirstChild('HumanoidRootPart')) then
+            local v754 = v655.Character.HumanoidRootPart;
+            local v755 = (v754.Position - v654.Position).Unit;
+            local v756 = v754.Position.Y - v654.Position.Y ;
+            local v757 = v755 * v103 ;
+            local v758 = 0;
+            if (v756 > (2 + 0)) then
+                v758 = v89;
+            elseif (v756 < - 2) then
+                v758 = - v89 * (0.5 + 0) ;
+            end
+            v654.AssemblyLinearVelocity = Vector3.new(v757.X, v758, v757.Z);
+        else
+            v654.AssemblyLinearVelocity = Vector3.zero;
+        end
+    end);
+end
+local function v157(v482)
+    local v483 = 0 - 0 ;
+    while true do
+        if (v483 == 0) then
+            v88 = v482;
+            if v88 then
+                local v905 = 0;
+                while true do
+                    if (v905 == (0 + 0)) then
+                        v153();
+                        v85 = v84;
+                        v905 = 1 + 0 ;
+                    end
+                    if (v905 == 1) then
+                        if v84 then
+                            local v1039 = 0;
+                            while true do
+                                if (v1039 == (0 - 0)) then
+                                    v84 = false;
+                                    if v116['Infinite Jump'] then
+                                        v116['Infinite Jump'].update(false);
+                                    end
+                                    break;
+                                end
+                            end
+                        end
+                        v156();
+                        v905 = 1 + 1 ;
+                    end
+                    if (v905 == 2) then
+                        task.spawn(function()
+                            while v88 do
+                                local v1040 = 0;
+                                local v1041;
+                                while true do
+                                    if (v1040 == (1019 - (829 + 190))) then
+                                        v1041 = v18.Character;
+                                        if v1041 then
+                                            local v1077 = 0;
+                                            local v1078;
+                                            while true do
+                                                if (v1077 == (0 - 0)) then
+                                                    v1078 = v18.Backpack:FindFirstChild('Bat') or v1041:FindFirstChild('Bat') ;
+                                                    if v1078 then
+                                                        local v1091 = 0 - 0 ;
+                                                        local v1092;
+                                                        while true do
+                                                            if (v1091 == (0 - 0)) then
+                                                                v1092 = 0 - 0 ;
+                                                                while true do
+                                                                    if (v1092 == 0) then
+                                                                        if (v1078.Parent ~= v1041) then
+                                                                            v1078.Parent = v1041;
+                                                                        end
+                                                                        v1078:Activate();
+                                                                        break;
+                                                                    end
+                                                                end
+                                                                break;
+                                                            end
+                                                        end
+                                                    end
+                                                    break;
+                                                end
+                                            end
+                                        end
+                                        v1040 = 1 + 0 ;
+                                    end
+                                    if (v1040 == (1 + 0)) then
+                                        task.wait(0.1 - 0);
+                                        break;
+                                    end
+                                end
+                            end
+                        end);
+                        break;
+                    end
+                end
+            else
+                local v906 = 0 + 0 ;
+                while true do
+                    if (v906 == (613 - (520 + 93))) then
+                        v154();
+                        v155();
+                        v906 = 1;
+                    end
+                    if (v906 == (277 - (259 + 17))) then
+                        if v85 then
+                            local v1042 = 0;
+                            while true do
+                                if (v1042 == (1 + 0)) then
+                                    v85 = false;
+                                    break;
+                                end
+                                if (0 == v1042) then
+                                    v84 = true;
+                                    if v116['Infinite Jump'] then
+                                        v116['Infinite Jump'].update(true);
+                                    end
+                                    v1042 = 1 + 0 ;
+                                end
+                            end
+                        end
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+    end
+end
+local function v158()
+    local v484 = v18.Character;
+    if not v484 then
+        return;
+    end
+    local v485 = v484:FindFirstChild('HumanoidRootPart');
+    if not v485 then
+        return;
+    end
+    local v486 = v485.AssemblyLinearVelocity;
+    if v104 then
+        local v685 = 0 - 0 ;
+        local v686;
+        local v687;
+        while true do
+            if (v685 == (593 - (396 + 195))) then
+                if v687 then
+                    local v979 = (v687.Position.Y + v105) - v485.Position.Y ;
+                    if (math.abs(v979) > (0.3 - 0)) then
+                        v485.AssemblyLinearVelocity = Vector3.new(v486.X, v979 * (1776 - (440 + 1321)), v486.Z);
+                    else
+                        v485.AssemblyLinearVelocity = Vector3.new(v486.X, 1829 - (1059 + 770), v486.Z);
+                    end
+                end
+                break;
+            end
+            if (v685 == 1) then
+                v686.FilterDescendantsInstances = {
+                    v484
+                };
+                v687 = workspace:Raycast(v485.Position, Vector3.new(545 - (424 + 121), - 50, 0), v686);
+                v685 = 2;
+            end
+            if (v685 == 0) then
+                v686 = RaycastParams.new();
+                v686.FilterType = Enum.RaycastFilterType.Blacklist;
+                v685 = 1 + 0 ;
+            end
+        end
+    end
+end
+v10.Heartbeat:Connect(v158);
+local v159 = false;
+local v160 = 1387 - (641 + 706) ;
+local v161 = 10 + 15 ;
+local v162 = 455 - (249 + 191) ;
+local v163 = {};
+local function v164(v487)
+    local v488 = 0 - 0 ;
+    local v489;
+    while true do
+        if (0 == v488) then
+            v489 = v487:GetState();
+            return (v489 == Enum.HumanoidStateType.Physics) or (v489 == Enum.HumanoidStateType.Ragdoll) or (v489 == Enum.HumanoidStateType.FallingDown) or (v489 == Enum.HumanoidStateType.GettingUp) ;
+        end
+    end
+end
+local function v165()
+    pcall(function()
+        local v657 = 0;
+        local v658;
+        while true do
+            if (v657 == 0) then
+                v658 = v18:WaitForChild('PlayerScripts'):WaitForChild('PlayerModule');
+                require(v658):GetControls():Enable();
+                break;
+            end
+        end
+    end);
+end
+local function v166(v490, v491)
+    local v492 = 0 + 0 ;
+    while true do
+        if (v492 == (0 - 0)) then
+            for v858, v859 in pairs(v490:GetDescendants()) do
+                if (v859:IsA('BallSocketConstraint') or v859:IsA('NoCollisionConstraint') or v859:IsA('HingeConstraint') or (v859:IsA('Attachment') and ((v859.Name == "A") or (v859.Name == "B"))) or v859:IsA('BodyVelocity') or v859:IsA('BodyPosition') or v859:IsA('BodyGyro')) then
+                    v859:Destroy();
+                end
+            end
+            for v860, v861 in pairs(v490:GetDescendants()) do
+                if v861:IsA('Motor6D') then
+                    v861.Enabled = true;
+                end
+            end
+            v492 = 428 - (183 + 244) ;
+        end
+        if (v492 == (1 + 0)) then
+            for v862, v863 in pairs(v491:GetPlayingAnimationTracks()) do
+                local v864 = (v863.Animation and v863.Animation.Name:lower()) or "" ;
+                if (v864:find('rag') or v864:find('fall') or v864:find('hurt') or v864:find('down')) then
+                    v863:Stop(730 - (434 + 296));
+                end
+            end
+            break;
+        end
+    end
+end
+local function v167()
+    for v659, v660 in ipairs(v163) do
+        if v660 then
+            v660:Disconnect();
+        end
+    end
+    v163 = {};
+end
+local function v168()
+    v167();
+    local v493 = v18.Character;
+    if not v493 then
+        return;
+    end
+    local v494 = v493:WaitForChild('Humanoid');
+    local v495 = v493:WaitForChild('HumanoidRootPart');
+    local v496 = v494:WaitForChild('Animator');
+    local v497 = v15.CurrentCamera;
+    local v498 = Vector3.zero;
+    local function v499()
+        if v164(v494) then
+            local v762 = 0 - 0 ;
+            while true do
+                if (v762 == 0) then
+                    v494:ChangeState(Enum.HumanoidStateType.Running);
+                    v166(v493, v496);
+                    v762 = 513 - (169 + 343) ;
+                end
+                if (v762 == 1) then
+                    v497.CameraSubject = v494;
+                    v165();
+                    break;
+                end
+            end
+        end
+    end
+    table.insert(v163, v494.StateChanged:Connect(v499));
+    pcall(function()
+        table.insert(v163, v14.Packages.Net['RE/CombatService/ApplyImpulse'].OnClientEvent:Connect(function()
+            if v164(v494) then
+                v495.AssemblyLinearVelocity = Vector3.zero;
+            end
+        end));
+    end);
+    table.insert(v163, v493.DescendantAdded:Connect(function()
+        if v164(v494) then
+            v166(v493, v496);
+        end
+    end));
+    table.insert(v163, v10.Heartbeat:Connect(function()
+        if v164(v494) then
+            local v763 = 0;
+            local v764;
+            while true do
+                if (v763 == (1 + 0)) then
+                    if (((v764 - v498).Magnitude > v160) and (v764.Magnitude > v161)) then
+                        v495.AssemblyLinearVelocity = v764.Unit * math.min(v764.Magnitude, v162) ;
+                    end
+                    v498 = v764;
+                    break;
+                end
+                if (v763 == (0 - 0)) then
+                    v166(v493, v496);
+                    v764 = v495.AssemblyLinearVelocity;
+                    v763 = 2 - 1 ;
+                end
+            end
+        end
+    end));
+    v165();
+    v166(v493, v496);
+end
+local function v169(v500)
+    local v501 = 0;
+    while true do
+        if (v501 == (0 + 0)) then
+            v159 = v500;
+            if v500 then
+                v168();
+            else
+                v167();
+            end
+            break;
+        end
+    end
+end
+v18.CharacterAdded:Connect(function()
+    task.wait(0.5 - 0);
+    if v159 then
+        v168();
+    end
+end);
+v10.Heartbeat:Connect(function()
+    local v502 = 1123 - (651 + 472) ;
+    local v503;
+    while true do
+        if (1 == v502) then
+            if (v503 and v503:FindFirstChild('HumanoidRootPart')) then
+                local v910 = 0;
+                local v911;
+                while true do
+                    if (v910 == 0) then
+                        v911 = v503.HumanoidRootPart;
+                        if (v911.AssemblyLinearVelocity.Y < - v87) then
+                            v911.AssemblyLinearVelocity = Vector3.new(v911.AssemblyLinearVelocity.X, - v87, v911.AssemblyLinearVelocity.Z);
+                        end
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+        if (v502 == (0 + 0)) then
+            if not v84 then
+                return;
+            end
+            v503 = v18.Character;
+            v502 = 1 + 0 ;
+        end
+    end
+end);
+v9.JumpRequest:Connect(function()
+    if not v84 then
+        return;
+    end
+    local v504 = v18.Character;
+    if (v504 and v504:FindFirstChild('HumanoidRootPart')) then
+        local v688 = 0 - 0 ;
+        local v689;
+        while true do
+            if (v688 == 0) then
+                v689 = v504.HumanoidRootPart;
+                v689.AssemblyLinearVelocity = Vector3.new(v689.AssemblyLinearVelocity.X, v86, v689.AssemblyLinearVelocity.Z);
+                break;
+            end
+        end
+    end
+end);
+local v170 = {};
+local v171 = false;
+local function v172()
+    local v505 = 483 - (397 + 86) ;
+    local v506;
+    while true do
+        if (v505 == (878 - (423 + 453))) then
+            table.insert(v170, v506);
+            break;
+        end
+        if (v505 == (1 + 0)) then
+            v506 = coroutine.create(function()
+                while v171 do
+                    v10.Heartbeat:Wait();
+                    local v914 = v18.Character;
+                    local v915 = v914 and v914:FindFirstChild('HumanoidRootPart') ;
+                    if not v915 then
+                        local v980 = 0 + 0 ;
+                        while true do
+                            if (v980 == (0 + 0)) then
+                                v10.Heartbeat:Wait();
+                                continue;
+                                break;
+                            end
+                        end
+                    end
+                    local v916 = v915.Velocity;
+                    v915.Velocity = (v916 * (7981 + 2019)) + Vector3.new(0 + 0, 10000, 1190 - (50 + 1140)) ;
+                    v10.RenderStepped:Wait();
+                    if (v915 and v915.Parent) then
+                        v915.Velocity = v916;
+                    end
+                    v10.Stepped:Wait();
+                    if (v915 and v915.Parent) then
+                        v915.Velocity = v916 + Vector3.new(0, 0.1 + 0, 0) ;
+                    end
+                end
+            end);
+            coroutine.resume(v506);
+            v505 = 2 + 0 ;
+        end
+        if (v505 == (0 + 0)) then
+            v171 = true;
+            table.insert(v170, v10.Stepped:Connect(function()
+                local v867 = 0;
+                while true do
+                    if (v867 == 0) then
+                        if not v171 then
+                            return;
+                        end
+                        for v997, v998 in ipairs(v8:GetPlayers()) do
+                            if ((v998 ~= v18) and v998.Character) then
+                                for v1046, v1047 in ipairs(v998.Character:GetChildren()) do
+                                    if v1047:IsA('BasePart') then
+                                        v1047.CanCollide = false;
+                                    end
+                                end
+                            end
+                        end
+                        break;
+                    end
+                end
+            end));
+            v505 = 1;
+        end
+    end
+end
+local function v173()
+    v171 = false;
+    for v661, v662 in ipairs(v170) do
+        if (typeof(v662) == 'RBXScriptConnection') then
+            v662:Disconnect();
+        elseif (typeof(v662) == 'thread') then
+            pcall(task.cancel, v662);
+        end
+    end
+    v170 = {};
+end
+local v174 = false;
+local function v175()
+    local v507 = 0 - 0 ;
+    while true do
+        if (v507 == (0 + 0)) then
+            if v174 then
+                return;
+            end
+            v174 = true;
+            v507 = 597 - (157 + 439) ;
+        end
+        if (v507 == (1 - 0)) then
+            v172();
+            task.delay(0.4 - 0, function()
+                local v868 = 0 - 0 ;
+                local v869;
+                while true do
+                    if (v868 == 0) then
+                        v869 = 918 - (782 + 136) ;
+                        while true do
+                            if (v869 == 0) then
+                                v173();
+                                v174 = false;
+                                break;
+                            end
+                        end
+                        break;
+                    end
+                end
+            end);
+            break;
+        end
+    end
+end
+local v176 = true;
+local v177 = nil;
+local v178 = {};
+local v179 = {};
+local v180 = {};
+local v181 = false;
+local v182 = 862 - (112 + 743) ;
+local v183 = {};
+pcall(function()
+    local v508 = 1171 - (1026 + 145) ;
+    local v509;
+    local v510;
+    while true do
+        if (v508 == 0) then
+            local v766 = 0 + 0 ;
+            while true do
+                if (v766 == (719 - (493 + 225))) then
+                    v508 = 1;
+                    break;
+                end
+                if ((0 - 0) == v766) then
+                    v509 = game:GetService('ReplicatedStorage');
+                    v510 = v509:FindFirstChild('Datas');
+                    v766 = 1 + 0 ;
+                end
+            end
+        end
+        if (v508 == (2 - 1)) then
+            if v510 then
+                local v918 = 0;
+                local v919;
+                while true do
+                    if (v918 == 0) then
+                        v919 = v510:FindFirstChild('Animals');
+                        if v919 then
+                            v183 = require(v919);
+                        end
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+    end
+end);
+local function v184()
+    local v511 = v18.Character;
+    if not v511 then
+        return nil;
+    end
+    return v511:FindFirstChild('HumanoidRootPart') or v511:FindFirstChild('UpperTorso') ;
+end
+local function v185(v512)
+    local v513 = 0 + 0 ;
+    local v514;
+    local v515;
+    local v516;
+    while true do
+        local v663 = 0 - 0 ;
+        while true do
+            if ((1 + 0) == v663) then
+                if (v513 == 0) then
+                    v514 = workspace.Plots and workspace.Plots:FindFirstChild(v512) ;
+                    if not v514 then
+                        return false;
+                    end
+                    v513 = 1 - 0 ;
+                end
+                break;
+            end
+            if (v663 == (1595 - (210 + 1385))) then
+                if (v513 == 1) then
+                    local v955 = 1689 - (1201 + 488) ;
+                    while true do
+                        if (v955 == (0 + 0)) then
+                            v515 = v514:FindFirstChild('PlotSign');
+                            if not v515 then
+                                return false;
+                            end
+                            v955 = 1 - 0 ;
+                        end
+                        if ((1 - 0) == v955) then
+                            v513 = 587 - (352 + 233) ;
+                            break;
+                        end
+                    end
+                end
+                if (v513 == 2) then
+                    v516 = v515:FindFirstChild('YourBase');
+                    return v516 and v516:IsA('BillboardGui') and (v516.Enabled == true) ;
+                end
+                v663 = 1;
+            end
+        end
+    end
+end
+local function v186(v517)
+    local v518 = 0;
+    local v519;
+    while true do
+        if ((0 - 0) == v518) then
+            if (not v517 or not v517:IsA('Model')) then
+                return;
+            end
+            if v185(v517.Name) then
+                return;
+            end
+            v518 = 1 + 0 ;
+        end
+        if (2 == v518) then
+            for v870, v871 in ipairs(v519:GetChildren()) do
+                if (v871:IsA('Model') and v871:FindFirstChild('Base')) then
+                    local v956 = 'Unknown';
+                    local v957 = v871.Base:FindFirstChild('Spawn');
+                    if v957 then
+                        for v1015, v1016 in ipairs(v957:GetChildren()) do
+                            if (v1016:IsA('Model') and (v1016.Name ~= 'PromptAttachment')) then
+                                v956 = v1016.Name;
+                                local v1049 = v183[v956];
+                                if (v1049 and v1049.DisplayName) then
+                                    v956 = v1049.DisplayName;
+                                end
+                                break;
+                            end
+                        end
+                    end
+                    table.insert(v178, {
+                        ['name'] = v956,
+                        ['plot'] = v517.Name,
+                        ['slot'] = v871.Name,
+                        ['worldPosition'] = v871:GetPivot().Position,
+                        ['uid'] = v517.Name .. "_" .. v871.Name
+                    });
+                end
+            end
+            break;
+        end
+        if (v518 == (2 - 1)) then
+            v519 = v517:FindFirstChild('AnimalPodiums');
+            if not v519 then
+                return;
+            end
+            v518 = 576 - (489 + 85) ;
+        end
+    end
+end
+local function v187(v520)
+    local v521 = 0;
+    local v522;
+    local v523;
+    local v524;
+    local v525;
+    local v526;
+    local v527;
+    local v528;
+    local v529;
+    while true do
+        if ((1503 - (277 + 1224)) == v521) then
+            if not v525 then
+                return nil;
+            end
+            v526 = v525:FindFirstChild(v520.slot);
+            if not v526 then
+                return nil;
+            end
+            v527 = v526:FindFirstChild('Base');
+            v521 = 1496 - (663 + 830) ;
+        end
+        if (v521 == (0 + 0)) then
+            if not v520 then
+                return nil;
+            end
+            v522 = v179[v520.uid];
+            if (v522 and v522.Parent) then
+                return v522;
+            end
+            v523 = workspace:FindFirstChild('Plots');
+            v521 = 2 - 1 ;
+        end
+        if (v521 == 1) then
+            if not v523 then
+                return nil;
+            end
+            v524 = v523:FindFirstChild(v520.plot);
+            if not v524 then
+                return nil;
+            end
+            v525 = v524:FindFirstChild('AnimalPodiums');
+            v521 = 877 - (461 + 414) ;
+        end
+        if (v521 == 3) then
+            if not v527 then
+                return nil;
+            end
+            v528 = v527:FindFirstChild('Spawn');
+            if not v528 then
+                return nil;
+            end
+            v529 = v528:FindFirstChild('PromptAttachment');
+            v521 = 1 + 3 ;
+        end
+        if (v521 == (2 + 2)) then
+            if not v529 then
+                return nil;
+            end
+            for v872, v873 in ipairs(v529:GetChildren()) do
+                if v873:IsA('ProximityPrompt') then
+                    local v958 = 0 + 0 ;
+                    local v959;
+                    while true do
+                        if ((0 + 0) == v958) then
+                            v959 = 250 - (172 + 78) ;
+                            while true do
+                                if (v959 == (0 - 0)) then
+                                    v179[v520.uid] = v873;
+                                    return v873;
+                                end
+                            end
+                            break;
+                        end
+                    end
+                end
+            end
+            break;
+        end
+    end
+end
+local function v188(v530)
+    local v531 = 0 + 0 ;
+    local v532;
+    local v533;
+    local v534;
+    local v535;
+    local v536;
+    while true do
+        if (v531 == (2 - 0)) then
+            v535, v536 = pcall(getconnections, v530.Triggered);
+            if (v535 and (type(v536) == 'table')) then
+                for v960, v961 in ipairs(v536) do
+                    if (type(v961.Function) == 'function') then
+                        table.insert(v532.triggerCallbacks, v961.Function);
+                    end
+                end
+            end
+            v531 = 1 + 2 ;
+        end
+        if (v531 == (1 + 0)) then
+            v533, v534 = pcall(getconnections, v530.PromptButtonHoldBegan);
+            if (v533 and (type(v534) == 'table')) then
+                for v962, v963 in ipairs(v534) do
+                    if (type(v963.Function) == 'function') then
+                        table.insert(v532.holdCallbacks, v963.Function);
+                    end
+                end
+            end
+            v531 = 3 - 1 ;
+        end
+        if (v531 == (0 - 0)) then
+            if v180[v530] then
+                return;
+            end
+            v532 = {
+                ['holdCallbacks'] = {},
+                ['triggerCallbacks'] = {},
+                ['ready'] = true
+            };
+            v531 = 1 + 0 ;
+        end
+        if (v531 == (2 + 1)) then
+            if ((# v532.holdCallbacks > (0 + 0)) or (# v532.triggerCallbacks > 0)) then
+                v180[v530] = v532;
+            end
+            break;
+        end
+    end
+end
+local function v189(v537)
+    local v538 = 0 - 0 ;
+    local v539;
+    while true do
+        if (v538 == (0 - 0)) then
+            v539 = v180[v537];
+            if (not v539 or not v539.ready) then
+                return false;
+            end
+            v538 = 1;
+        end
+        if (v538 == 2) then
+            task.spawn(function()
+                local v874 = 0;
+                while true do
+                    if (v874 == 3) then
+                        v181 = false;
+                        break;
+                    end
+                    if (v874 == 0) then
+                        for v999, v1000 in ipairs(v539.holdCallbacks) do
+                            task.spawn(v1000);
+                        end
+                        task.wait(0.2);
+                        v874 = 1 + 0 ;
+                    end
+                    if (v874 == (1 + 0)) then
+                        for v1001, v1002 in ipairs(v539.triggerCallbacks) do
+                            task.spawn(v1002);
+                        end
+                        task.wait(447.01 - (133 + 314));
+                        v874 = 1 + 1 ;
+                    end
+                    if (v874 == 2) then
+                        v539.ready = true;
+                        task.wait(213.01 - (199 + 14));
+                        v874 = 3;
+                    end
+                end
+            end);
+            return true;
+        end
+        if (v538 == (3 - 2)) then
+            v539.ready = false;
+            v181 = true;
+            v538 = 1551 - (647 + 902) ;
+        end
+    end
+end
+local function v190()
+    local v540 = v184();
+    if not v540 then
+        return nil;
+    end
+    local v541, v542 = nil, math.huge;
+    for v664, v665 in ipairs(v178) do
+        if (not v185(v665.plot) and v665.worldPosition) then
+            local v770 = (v540.Position - v665.worldPosition).Magnitude;
+            if (v770 < v542) then
+                local v921 = 0;
+                local v922;
+                while true do
+                    if (v921 == (0 - 0)) then
+                        v922 = 0;
+                        while true do
+                            if (v922 == 0) then
+                                v542 = v770;
+                                v541 = v665;
+                                break;
+                            end
+                        end
+                        break;
+                    end
+                end
+            end
+        end
+    end
+    return v541;
+end
+local function v191()
+    local v543 = 0;
+    local v544;
+    while true do
+        if (v543 == 0) then
+            v544 = 0;
+            while true do
+                if (v544 == 0) then
+                    if v177 then
+                        v177:Disconnect();
+                    end
+                    v177 = v10.Heartbeat:Connect(function()
+                        if (not v176 or v181) then
+                            return;
+                        end
+                        local v984 = v190();
+                        if not v984 then
+                            return;
+                        end
+                        local v985 = v184();
+                        if not v985 then
+                            return;
+                        end
+                        if ((v985.Position - v984.worldPosition).Magnitude > v182) then
+                            return;
+                        end
+                        local v986 = v179[v984.uid];
+                        if (not v986 or not v986.Parent) then
+                            v986 = v187(v984);
+                        end
+                        if v986 then
+                            local v1017 = 233 - (85 + 148) ;
+                            local v1018;
+                            while true do
+                                if (v1017 == (1289 - (426 + 863))) then
+                                    v1018 = 0 - 0 ;
+                                    while true do
+                                        if (v1018 == (1654 - (873 + 781))) then
+                                            v188(v986);
+                                            v189(v986);
+                                            break;
+                                        end
+                                    end
+                                    break;
+                                end
+                            end
+                        end
+                    end);
+                    break;
+                end
+            end
+            break;
+        end
+    end
+end
+local v192 = false;
+local function v193()
+    local v545 = 0;
+    while true do
+        if (v545 == (0 - 0)) then
+            if v192 then
+                return;
+            end
+            v192 = true;
+            v545 = 2 - 1 ;
+        end
+        if (v545 == 1) then
+            task.spawn(function()
+                local v875 = 0 + 0 ;
+                local v876;
+                while true do
+                    if (v875 == (0 - 0)) then
+                        task.wait(2);
+                        v876 = workspace:WaitForChild('Plots', 14 - 4);
+                        v875 = 1;
+                    end
+                    if (2 == v875) then
+                        v876.ChildAdded:Connect(function(v1003)
+                            if v1003:IsA('Model') then
+                                local v1044 = 0;
+                                while true do
+                                    if (v1044 == (0 - 0)) then
+                                        task.wait(1947.5 - (414 + 1533));
+                                        v186(v1003);
+                                        break;
+                                    end
+                                end
+                            end
+                        end);
+                        task.spawn(function()
+                            while task.wait(5) do
+                                local v1019 = 0 + 0 ;
+                                local v1020;
+                                while true do
+                                    if (v1019 == (555 - (443 + 112))) then
+                                        v1020 = 0;
+                                        while true do
+                                            if (v1020 == (1479 - (888 + 591))) then
+                                                v178 = {};
+                                                for v1089, v1090 in ipairs(v876:GetChildren()) do
+                                                    if v1090:IsA('Model') then
+                                                        v186(v1090);
+                                                    end
+                                                end
+                                                break;
+                                            end
+                                        end
+                                        break;
+                                    end
+                                end
+                            end
+                        end);
+                        break;
+                    end
+                    if (v875 == (2 - 1)) then
+                        if not v876 then
+                            return;
+                        end
+                        for v1004, v1005 in ipairs(v876:GetChildren()) do
+                            if v1005:IsA('Model') then
+                                v186(v1005);
+                            end
+                        end
+                        v875 = 2;
+                    end
+                end
+            end);
+            v191();
+            break;
+        end
+    end
+end
+local v194 = {};
+local function v195()
+    local v546 = 0 + 0 ;
+    while true do
+        if (v546 == 0) then
+            v106 = false;
+            if (v109 == 'left') then
+                v109 = 'none';
+            end
+            break;
+        end
+    end
+end
+local function v196()
+    local v547 = 0 - 0 ;
+    while true do
+        if (v547 == 0) then
+            v107 = false;
+            if (v109 == 'right') then
+                v109 = 'none';
+            end
+            break;
+        end
+    end
+end
+local function v197()
+    if (v108 == 1) then
+        v106 = true;
+        task.spawn(function()
+            local v771 = 0;
+            while true do
+                if (v771 == (0 + 0)) then
+                    v143(v91, v101, function()
+                        return v106;
+                    end);
+                    v143(v92, v101, function()
+                        return v106;
+                    end);
+                    v771 = 1;
+                end
+                if (v771 == 3) then
+                    if v194['Auto Play Left'] then
+                        v194['Auto Play Left'](false);
+                    end
+                    break;
+                end
+                if (v771 == 2) then
+                    v106 = false;
+                    if v116['Auto Play Left'] then
+                        v116['Auto Play Left'].update(false);
+                    end
+                    v771 = 3;
+                end
+                if (v771 == (1 + 0)) then
+                    v143(v93, v102, function()
+                        return v106;
+                    end);
+                    v143(v94, v102, function()
+                        return v106;
+                    end);
+                    v771 = 1 + 1 ;
+                end
+            end
+        end);
+    else
+        local v690 = 0 - 0 ;
+        local v691;
+        while true do
+            if (v690 == 0) then
+                v691 = 0 - 0 ;
+                while true do
+                    if (v691 == (1678 - (136 + 1542))) then
+                        v109 = 'left';
+                        v110 = 1;
+                        break;
+                    end
+                end
+                break;
+            end
+        end
+    end
+end
+local function v198()
+    if (v108 == (3 - 2)) then
+        v107 = true;
+        task.spawn(function()
+            local v772 = 0;
+            while true do
+                if (v772 == (2 + 0)) then
+                    v107 = false;
+                    if v116['Auto Play Right'] then
+                        v116['Auto Play Right'].update(false);
+                    end
+                    v772 = 4 - 1 ;
+                end
+                if (v772 == (1 + 0)) then
+                    v143(v97, v102, function()
+                        return v107;
+                    end);
+                    v143(v98, v102, function()
+                        return v107;
+                    end);
+                    v772 = 488 - (68 + 418) ;
+                end
+                if (v772 == (0 - 0)) then
+                    v143(v95, v101, function()
+                        return v107;
+                    end);
+                    v143(v96, v101, function()
+                        return v107;
+                    end);
+                    v772 = 1;
+                end
+                if (v772 == (5 - 2)) then
+                    if v194['Auto Play Right'] then
+                        v194['Auto Play Right'](false);
+                    end
+                    break;
+                end
+            end
+        end);
+    else
+        v109 = 'right';
+        v110 = 1 + 0 ;
+    end
+end
+local v199 = Instance.new('ScreenGui', v12);
+v199.Name = 'DropButtonGui';
+v199.Enabled = false;
+v199.ResetOnSpawn = false;
+local v203 = Instance.new('TextButton', v199);
+v203.Size = UDim2.new(1092 - (770 + 322), 6 + 84, 0 + 0, 5 + 31);
+v203.Position = UDim2.new(0.5 - 0, - (86 - 41), 0.2 - 0, 0 - 0);
+v203.BackgroundColor3 = Color3.fromRGB(0 + 0, 120, 382 - 127);
+v203.Text = 'Drop';
+v203.TextColor3 = Color3.new(1, 1 + 0, 1 + 0);
+v203.Font = Enum.Font.GothamBold;
+v203.TextSize = 14;
+v203.Active = true;
+v21(v203);
+Instance.new('UICorner', v203).CornerRadius = UDim.new(0, 8);
+local v213 = Instance.new('UIStroke', v203);
+v213.Thickness = 1.5 + 0 ;
+v213.Color = Color3.fromRGB(0 - 0, 220, 354 - 99);
+v213.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+v203.MouseButton1Click:Connect(function()
+    local v548 = 0 + 0 ;
+    while true do
+        if (v548 == (4 - 3)) then
+            task.delay(0.2, function()
+                v203.BackgroundColor3 = Color3.fromRGB(0, 120, 842 - 587);
+            end);
+            break;
+        end
+        if (v548 == (0 + 0)) then
+            v175();
+            v203.BackgroundColor3 = Color3.fromRGB(0, 1088 - 868, 255);
+            v548 = 832 - (762 + 69) ;
+        end
+    end
+end);
+local v217 = Instance.new('ScreenGui', v12);
+v217.Name = 'AsserSideMenuGui';
+v217.Enabled = false;
+v217.ResetOnSpawn = false;
+local v221 = Instance.new('Frame', v217);
+v221.Size = UDim2.new(0 - 0, 86 + 13, 0 + 0, 280 - 164);
+v221.Position = UDim2.new(1 + 0, - (2 + 107), 0.1, 0);
+v221.BackgroundTransparency = 3 - 2 ;
+local v225 = Instance.new('UIListLayout', v221);
+v225.SortOrder = Enum.SortOrder.LayoutOrder;
+v225.Padding = UDim.new(0, 5);
+local function v229(v549, v550, v551)
+    local v552 = 157 - (8 + 149) ;
+    local v553;
+    local v554;
+    local v555;
+    local v556;
+    local v557;
+    while true do
+        if (v552 == (1325 - (1199 + 121))) then
+            v556 = false;
+            v557 = nil;
+            function v557(v878)
+                local v879 = 0;
+                while true do
+                    if (1 == v879) then
+                        v11:Create(v555, TweenInfo.new(0.2 - 0), {
+                            ['BackgroundColor3'] = (v556 and Color3.fromRGB(0, 496 - 276, 105 + 150)) or Color3.fromRGB(53 - 38, 34 - 19, 14 + 1)
+                        }):Play();
+                        break;
+                    end
+                    if (v879 == (1807 - (518 + 1289))) then
+                        v556 = v878;
+                        v11:Create(v553, TweenInfo.new(0.2), {
+                            ['BackgroundColor3'] = (v556 and Color3.fromRGB(0, 205 - 85, 34 + 221)) or Color3.fromRGB(0 - 0, 19 + 6, 70)
+                        }):Play();
+                        v879 = 1;
+                    end
+                end
+            end
+            v553.MouseButton1Click:Connect(function()
+                v556 = not v556;
+                v551(v556);
+                v557(v556);
+                if v116[v549] then
+                    v117[v549] = v556;
+                    v116[v549].update(v556);
+                end
+            end);
+            v552 = 475 - (304 + 165) ;
+        end
+        if ((0 + 0) == v552) then
+            v553 = Instance.new('TextButton', v221);
+            v553.Size = UDim2.new(1, 160 - (54 + 106), 1969 - (1618 + 351), 18 + 7);
+            v553.BackgroundColor3 = Color3.fromRGB(0, 1041 - (10 + 1006), 18 + 52);
+            v553.BorderSizePixel = 0 + 0 ;
+            v552 = 1;
+        end
+        if (v552 == 1) then
+            v553.LayoutOrder = v550;
+            v553.Text = '  ' .. v549 ;
+            v553.TextColor3 = Color3.new(3 - 2, 1, 1034 - (912 + 121));
+            v553.Font = Enum.Font.GothamBold;
+            v552 = 2;
+        end
+        if (v552 == (1 + 1)) then
+            v553.TextSize = 1296 - (1140 + 149) ;
+            v553.TextXAlignment = Enum.TextXAlignment.Left;
+            Instance.new('UICorner', v553).CornerRadius = UDim.new(0, 4 + 2);
+            v554 = Instance.new('UIStroke', v553);
+            v552 = 3 - 0 ;
+        end
+        if (v552 == 3) then
+            v554.Thickness = 1 + 0 ;
+            v554.Color = Color3.fromRGB(0 - 0, 352 - 164, 255);
+            v554.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+            v555 = Instance.new('Frame', v553);
+            v552 = 1 + 3 ;
+        end
+        if (6 == v552) then
+            v194[v549] = v557;
+            return v553, v555;
+        end
+        if (v552 == (13 - 9)) then
+            v555.Size = UDim2.new(186 - (165 + 21), 6, 111 - (61 + 50), 3 + 3);
+            v555.Position = UDim2.new(1, - (52 - 41), 0.5 - 0, - (2 + 1));
+            v555.BackgroundColor3 = Color3.fromRGB(15, 1475 - (1295 + 165), 4 + 11);
+            Instance.new('UICorner', v555).CornerRadius = UDim.new(1 + 0, 1397 - (819 + 578));
+            v552 = 5;
+        end
+    end
+end
+local function v230()
+    local v558 = 1402 - (331 + 1071) ;
+    while true do
+        if (v558 == 0) then
+            v195();
+            v196();
+            v558 = 744 - (588 + 155) ;
+        end
+        if (v558 == 1) then
+            if v194['Auto Play Left'] then
+                v194['Auto Play Left'](false);
+            end
+            if v116['Auto Play Left'] then
+                v116['Auto Play Left'].update(false);
+            end
+            v558 = 2;
+        end
+        if (v558 == (1285 - (546 + 736))) then
+            v117['Auto Play Left'] = false;
+            v117['Auto Play Right'] = false;
+            break;
+        end
+        if (v558 == (1939 - (1834 + 103))) then
+            if v194['Auto Play Right'] then
+                v194['Auto Play Right'](false);
+            end
+            if v116['Auto Play Right'] then
+                v116['Auto Play Right'].update(false);
+            end
+            v558 = 2 + 1 ;
+        end
+    end
+end
+v229('Auto Play Right', 2 - 1, function(v559)
+    if v559 then
+        local v692 = 1766 - (1536 + 230) ;
+        local v693;
+        while true do
+            if (0 == v692) then
+                v693 = 0;
+                while true do
+                    if (v693 == (491 - (128 + 363))) then
+                        v195();
+                        if v194['Auto Play Left'] then
+                            v194['Auto Play Left'](false);
+                        end
+                        v693 = 1;
+                    end
+                    if (v693 == (1 + 1)) then
+                        v198();
+                        break;
+                    end
+                    if (v693 == 1) then
+                        if v116['Auto Play Left'] then
+                            v116['Auto Play Left'].update(false);
+                        end
+                        v117['Auto Play Left'] = false;
+                        v693 = 4 - 2 ;
+                    end
+                end
+                break;
+            end
+        end
+    else
+        v196();
+    end
+end);
+v229('Auto Play Left', 1 + 1, function(v560)
+    if v560 then
+        local v694 = 0 - 0 ;
+        while true do
+            if (v694 == (2 - 1)) then
+                if v116['Auto Play Right'] then
+                    v116['Auto Play Right'].update(false);
+                end
+                v117['Auto Play Right'] = false;
+                v694 = 4 - 2 ;
+            end
+            if (v694 == (0 + 0)) then
+                v196();
+                if v194['Auto Play Right'] then
+                    v194['Auto Play Right'](false);
+                end
+                v694 = 1010 - (615 + 394) ;
+            end
+            if (v694 == 2) then
+                v197();
+                break;
+            end
+        end
+    else
+        v195();
+    end
+end);
+v229('Lock in', 3 + 0, function(v561)
+    local v562 = 0;
+    while true do
+        if (v562 == (0 + 0)) then
+            v157(v561);
+            if v561 then
+                v230();
+            end
+            break;
+        end
+    end
+end);
+local v231, v232 = v229('Drop', 11 - 7, function()
+end);
+v231.MouseButton1Click:Connect(function()
+    local v563 = 0 - 0 ;
+    while true do
+        if (v563 == (651 - (59 + 592))) then
+            v230();
+            if v88 then
+                local v924 = 0 - 0 ;
+                while true do
+                    if (v924 == (1 - 0)) then
+                        if v116['Lock in'] then
+                            v116['Lock in'].update(false);
+                        end
+                        break;
+                    end
+                    if (v924 == 0) then
+                        v157(false);
+                        if v194['Lock in'] then
+                            v194['Lock in'](false);
+                        end
+                        v924 = 1 + 0 ;
+                    end
+                end
+            end
+            v563 = 172 - (70 + 101) ;
+        end
+        if (v563 == (2 - 1)) then
+            v175();
+            v231.BackgroundColor3 = Color3.fromRGB(0 + 0, 301 - 181, 496 - (123 + 118));
+            v563 = 1 + 1 ;
+        end
+        if (v563 == (1 + 1)) then
+            v232.BackgroundColor3 = Color3.fromRGB(0, 1619 - (653 + 746), 476 - 221);
+            task.delay(0.5 - 0, function()
+                local v880 = 0;
+                while true do
+                    if (v880 == (0 - 0)) then
+                        v231.BackgroundColor3 = Color3.fromRGB(0, 12 + 13, 45 + 25);
+                        v232.BackgroundColor3 = Color3.fromRGB(14 + 1, 2 + 13, 3 + 12);
+                        break;
+                    end
+                end
+            end);
+            break;
+        end
+    end
+end);
+local v233 = Instance.new('ScreenGui', v12);
+v233.Name = 'AsserDuels';
+local v235 = Instance.new('Frame', v233);
+v235.Size = UDim2.new(0, 260, 0, 320);
+v235.Position = UDim2.new(0.6 - 0, 0 + 0, 0.2 - 0, 1234 - (885 + 349));
+v235.BackgroundColor3 = Color3.fromRGB(0 + 0, 68 - 43, 70);
+v235.BorderSizePixel = 0 - 0 ;
+Instance.new('UICorner', v235).CornerRadius = UDim.new(968 - (915 + 53), 813 - (768 + 33));
+local v241 = Instance.new('UIStroke', v235);
+v241.Thickness = 3.5 - 2 ;
+v241.Color = Color3.fromRGB(0 - 0, 516 - (287 + 41), 1102 - (638 + 209));
+v241.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+local v245 = Instance.new('Frame', v235);
+v245.Size = UDim2.new(1, 0 + 0, 1686 - (96 + 1590), 40);
+v245.BackgroundColor3 = Color3.fromRGB(1672 - (741 + 931), 23 + 22, 341 - 221);
+v245.BorderSizePixel = 0;
+Instance.new('UICorner', v245).CornerRadius = UDim.new(0, 56 - 44);
+local v250 = Instance.new('TextLabel', v245);
+v250.Size = UDim2.new(1, - 110, 1 + 0, 0);
+v250.Position = UDim2.new(0 + 0, 5 + 10, 0, 0);
+v250.Text = 'Asser Duels';
+v250.BackgroundTransparency = 3 - 2 ;
+v250.TextColor3 = Color3.fromRGB(255, 255, 255);
+v250.Font = Enum.Font.GothamBold;
+v250.TextSize = 6 + 10 ;
+v250.TextXAlignment = Enum.TextXAlignment.Left;
+local v259 = Instance.new('TextButton', v245);
+v259.Size = UDim2.new(0 + 0, 70, 0, 97 - 73);
+v259.Position = UDim2.new(1 + 0, - (579 - (64 + 430)), 0.5 + 0, - 12);
+v259.BackgroundColor3 = Color3.fromRGB(363 - (106 + 257), 86 + 34, 976 - (496 + 225));
+v259.Text = 'Discord';
+v259.TextColor3 = Color3.new(1 - 0, 4 - 3, 1659 - (256 + 1402));
+v259.Font = Enum.Font.GothamBold;
+v259.TextSize = 1910 - (30 + 1869) ;
+Instance.new('UICorner', v259).CornerRadius = UDim.new(0, 6);
+v259.MouseButton1Click:Connect(function()
+    local v564 = 1369 - (213 + 1156) ;
+    local v565;
+    while true do
+        if (v564 == (188 - (96 + 92))) then
+            v565 = 0;
+            while true do
+                if (v565 == (1 + 0)) then
+                    v259.BackgroundColor3 = Color3.fromRGB(899 - (142 + 757), 180 + 40, 255);
+                    task.wait(1.5 + 0);
+                    v565 = 81 - (32 + 47) ;
+                end
+                if (v565 == 2) then
+                    v259.Text = 'Discord';
+                    v259.BackgroundColor3 = Color3.fromRGB(1977 - (1053 + 924), 118 + 2, 255);
+                    break;
+                end
+                if (v565 == (0 - 0)) then
+                    if setclipboard then
+                        setclipboard('https://discord.gg/NT6FtYuYG5');
+                    end
+                    v259.Text = 'Copied!';
+                    v565 = 1649 - (685 + 963) ;
+                end
+            end
+            break;
+        end
+    end
+end);
+v21(v235);
+local v268 = Instance.new('ScrollingFrame', v235);
+v268.Size = UDim2.new(1, - (40 - 20), 1 - 0, - (1804 - (541 + 1168)));
+v268.Position = UDim2.new(1597 - (645 + 952), 10, 0, 883 - (669 + 169));
+v268.BackgroundTransparency = 1;
+v268.BorderSizePixel = 0 - 0 ;
+v268.ScrollBarThickness = 6 - 3 ;
+v268.ScrollBarImageColor3 = Color3.fromRGB(0 + 0, 42 + 146, 255);
+local v275 = Instance.new('UIListLayout', v268);
+v275.SortOrder = Enum.SortOrder.LayoutOrder;
+v275.Padding = UDim.new(765 - (181 + 584), 1403 - (665 + 730));
+v275:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+    v268.CanvasSize = UDim2.new(0, 0 - 0, 0 - 0, v275.AbsoluteContentSize.Y);
+end);
+local function v278(v567, v568)
+    local v569 = 1350 - (540 + 810) ;
+    local v570;
+    local v571;
+    local v572;
+    local v573;
+    local v574;
+    while true do
+        if (v569 == (15 - 11)) then
+            v573.Position = UDim2.new(0 - 0, 3 + 0, 203 - (166 + 37), 1884 - (22 + 1859));
+            v573.BackgroundColor3 = Color3.fromRGB(255, 2027 - (843 + 929), 517 - (30 + 232));
+            Instance.new('UICorner', v573).CornerRadius = UDim.new(1, 0 - 0);
+            v574 = nil;
+            function v574(v881)
+                local v882 = 777 - (55 + 722) ;
+                while true do
+                    if (v882 == (0 - 0)) then
+                        v11:Create(v572, TweenInfo.new(0.2), {
+                            ['BackgroundColor3'] = (v881 and Color3.fromRGB(0, 1795 - (78 + 1597), 255)) or Color3.fromRGB(0 + 0, 15, 46 + 4)
+                        }):Play();
+                        v11:Create(v573, TweenInfo.new(0.2), {
+                            ['Position'] = (v881 and UDim2.new(1, - (15 + 2), 0, 552 - (305 + 244))) or UDim2.new(0 + 0, 108 - (95 + 10), 0 + 0, 9 - 6)
+                        }):Play();
+                        break;
+                    end
+                end
+            end
+            v572.MouseButton1Click:Connect(function()
+                local v883 = 0;
+                while true do
+                    if (v883 == (0 - 0)) then
+                        v117[v567] = not v117[v567];
+                        v568(v117[v567]);
+                        v883 = 1;
+                    end
+                    if (1 == v883) then
+                        v574(v117[v567]);
+                        if v194[v567] then
+                            v194[v567](v117[v567]);
+                        end
+                        break;
+                    end
+                end
+            end);
+            v569 = 767 - (592 + 170) ;
+        end
+        if (v569 == 2) then
+            v571.TextColor3 = Color3.fromRGB(889 - 634, 255, 640 - 385);
+            v571.Font = Enum.Font.GothamMedium;
+            v571.TextSize = 5 + 5 ;
+            v571.TextXAlignment = Enum.TextXAlignment.Left;
+            v572 = Instance.new('TextButton', v570);
+            v572.Size = UDim2.new(0 + 0, 82 - 48, 0, 4 + 16);
+            v569 = 3;
+        end
+        if (v569 == (5 - 2)) then
+            v572.Position = UDim2.new(1, - (551 - (353 + 154)), 0, 13 - 3);
+            v572.BackgroundColor3 = Color3.fromRGB(0, 15, 50);
+            v572.Text = "";
+            Instance.new('UICorner', v572).CornerRadius = UDim.new(1, 0 - 0);
+            v573 = Instance.new('Frame', v572);
+            v573.Size = UDim2.new(0 + 0, 14, 0, 11 + 3);
+            v569 = 3 + 1 ;
+        end
+        if (v569 == (0 - 0)) then
+            v118[v567] = v568;
+            v117[v567] = false;
+            v570 = Instance.new('Frame', v268);
+            v570.Size = UDim2.new(1 - 0, - (11 - 6), 0, 126 - (7 + 79));
+            v570.BackgroundColor3 = Color3.fromRGB(0 + 0, 216 - (24 + 157), 189 - 94);
+            v570.BorderSizePixel = 0 - 0 ;
+            v569 = 1;
+        end
+        if (v569 == 1) then
+            Instance.new('UICorner', v570).CornerRadius = UDim.new(0 + 0, 21 - 13);
+            v571 = Instance.new('TextLabel', v570);
+            v571.Size = UDim2.new(381 - (262 + 118), - 50, 1084 - (1038 + 45), 0 - 0);
+            v571.Position = UDim2.new(0, 10, 0, 0);
+            v571.Text = v567;
+            v571.BackgroundTransparency = 1;
+            v569 = 232 - (19 + 211) ;
+        end
+        if ((118 - (88 + 25)) == v569) then
+            return {
+                ['frame'] = v570,
+                ['update'] = v574
+            };
+        end
+    end
+end
+v116['Auto Play Left'] = v278('Auto Play Left', function(v575)
+    if v575 then
+        local v695 = 0 - 0 ;
+        while true do
+            if (v695 == 0) then
+                if v117['Auto Play Right'] then
+                    v117['Auto Play Right'] = false;
+                    v196();
+                    if v116['Auto Play Right'] then
+                        v116['Auto Play Right'].update(false);
+                    end
+                    if v194['Auto Play Right'] then
+                        v194['Auto Play Right'](false);
+                    end
+                end
+                v197();
+                break;
+            end
+        end
+    else
+        v195();
+    end
+end);
+v116['Auto Play Right'] = v278('Auto Play Right', function(v576)
+    if v576 then
+        local v696 = 0 + 0 ;
+        local v697;
+        while true do
+            if (v696 == 0) then
+                v697 = 0;
+                while true do
+                    if (v697 == (0 + 0)) then
+                        if v117['Auto Play Left'] then
+                            local v1045 = 0;
+                            while true do
+                                if (0 == v1045) then
+                                    v117['Auto Play Left'] = false;
+                                    v195();
+                                    v1045 = 1037 - (1007 + 29) ;
+                                end
+                                if (v1045 == (1 + 0)) then
+                                    if v116['Auto Play Left'] then
+                                        v116['Auto Play Left'].update(false);
+                                    end
+                                    if v194['Auto Play Left'] then
+                                        v194['Auto Play Left'](false);
+                                    end
+                                    break;
+                                end
+                            end
+                        end
+                        v198();
+                        break;
+                    end
+                end
+                break;
+            end
+        end
+    else
+        v196();
+    end
+end);
+v116['Infinite Jump'] = v278('Infinite Jump', function(v577)
+    v84 = v577;
+end);
+v116['Drop Button'] = v278('Drop Button', function(v578)
+    v199.Enabled = v578;
+end);
+v116['Mobile Buttons'] = v278('Mobile Buttons', function(v580)
+    v217.Enabled = v580;
+end);
+v116['Anti Ragdoll & Knockback'] = v278('Anti Ragdoll & Knockback', function(v582)
+    v169(v582);
+end);
+v116['Lock in'] = v278('Lock in', function(v583)
+    v157(v583);
+    if v583 then
+        v230();
+    end
+end);
+v116['Unwalk Animation'] = v278('Unwalk Animation', function(v584)
+    if v584 then
+        v128();
+    else
+        v129();
+    end
+end);
+v116['Optimizer'] = v278('Optimizer', function(v585)
+    v136(v585);
+end);
+local v288 = Instance.new('Frame', v235);
+v288.Size = UDim2.new(2 - 1, 0 - 0, 0, 9 + 31);
+v288.Position = UDim2.new(0, 811 - (340 + 471), 2 - 1, - (629 - (276 + 313)));
+v288.BackgroundTransparency = 1;
+local v292 = Instance.new('TextButton', v288);
+v292.Size = UDim2.new(2 - 1, - 20, 0 + 0, 12 + 16);
+v292.Position = UDim2.new(0, 10, 0.5 + 0, - (1986 - (495 + 1477)));
+v292.BackgroundColor3 = Color3.fromRGB(0 - 0, 79 + 41, 658 - (342 + 61));
+v292.Text = 'Save Config';
+v292.TextColor3 = Color3.new(1, 1, 1 + 0);
+v292.Font = Enum.Font.GothamBold;
+v292.TextSize = 177 - (4 + 161) ;
+Instance.new('UICorner', v292).CornerRadius = UDim.new(0 + 0, 18 - 12);
+if v12:FindFirstChild('CH_SpeedDisplay') then
+    v12.CH_SpeedDisplay:Destroy();
+end
+local v301 = Instance.new('BillboardGui');
+v301.Name = 'CH_SpeedDisplay';
+v301.Size = UDim2.new(0 - 0, 587 - (322 + 175), 563 - (173 + 390), 7 + 19);
+v301.StudsOffset = Vector3.new(0, 3.5, 0);
+v301.AlwaysOnTop = true;
+v301.ResetOnSpawn = false;
+local v307 = Instance.new('TextLabel', v301);
+v307.Size = UDim2.new(315 - (203 + 111), 0, 1, 0 + 0);
+v307.BackgroundTransparency = 1 + 0 ;
+v307.TextColor3 = Color3.fromRGB(0, 437 - 287, 255);
+v307.Font = Enum.Font.GothamBold;
+v307.TextSize = 20;
+v307.Text = '0 sp';
+v307.TextStrokeTransparency = 0 + 0 ;
+v307.TextStrokeColor3 = Color3.fromRGB(706 - (57 + 649), 384 - (328 + 56), 0 + 0);
+local function v316(v586)
+    local v587 = 0;
+    local v588;
+    while true do
+        if (v587 == (512 - (433 + 79))) then
+            if not v586 then
+                return;
+            end
+            v588 = v586:WaitForChild('HumanoidRootPart', 1 + 4);
+            v587 = 1 + 0 ;
+        end
+        if (v587 == 1) then
+            if v588 then
+                local v925 = 0 - 0 ;
+                while true do
+                    if (v925 == 0) then
+                        v301.Adornee = v588;
+                        v301.Parent = v12;
+                        break;
+                    end
+                end
+            end
+            break;
+        end
+    end
+end
+v18.CharacterAdded:Connect(function(v589)
+    local v590 = 0 - 0 ;
+    local v591;
+    while true do
+        if (v590 == 0) then
+            v591 = 0;
+            while true do
+                if (0 == v591) then
+                    task.wait(0.5);
+                    v316(v589);
+                    break;
+                end
+            end
+            break;
+        end
+    end
+end);
+v10.RenderStepped:Connect(function()
+    local v592 = 0 + 0 ;
+    local v593;
+    while true do
+        if (v592 == (0 + 0)) then
+            v593 = v18.Character;
+            if (v593 and v593:FindFirstChild('HumanoidRootPart')) then
+                v307.Text = math.floor(v593.HumanoidRootPart.AssemblyLinearVelocity.Magnitude) .. ' sp' ;
+            end
+            break;
+        end
+    end
+end);
+if v18.Character then
+    v316(v18.Character);
+end
+local v317 = Instance.new('ScreenGui', v12);
+v317.Name = 'SpeedConfigGui';
+v317.ResetOnSpawn = false;
+local v320 = 1386 - (562 + 474) ;
+local v321 = Instance.new('Frame', v317);
+v321.Size = UDim2.new(0 - 0, 366 - 186, 905 - (76 + 829), v320);
+v321.Position = UDim2.new(1673.1 - (1506 + 167), 0 - 0, 266.2 - (58 + 208), 0 + 0);
+v321.BackgroundColor3 = Color3.fromRGB(0, 25, 70);
+v321.BorderSizePixel = 0 + 0 ;
+v321.ClipsDescendants = true;
+Instance.new('UICorner', v321).CornerRadius = UDim.new(0, 10);
+local v328 = Instance.new('UIStroke', v321);
+v328.Thickness = 1.5;
+v328.Color = Color3.fromRGB(0, 109 + 79, 255);
+v328.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+v21(v321);
+local v332 = Instance.new('TextLabel', v321);
+v332.Size = UDim2.new(1, 0 - 0, 0, 367 - (258 + 79));
+v332.BackgroundColor3 = Color3.fromRGB(0, 45, 16 + 104);
+v332.Text = 'Asser helper';
+v332.TextColor3 = Color3.new(1, 1 - 0, 1471 - (1219 + 251));
+v332.Font = Enum.Font.GothamBold;
+v332.TextSize = 1681 - (1231 + 440) ;
+Instance.new('UICorner', v332).CornerRadius = UDim.new(58 - (34 + 24), 6 + 4);
+local v340 = Instance.new('TextButton', v332);
+v340.Size = UDim2.new(0 - 0, 9 + 11, 0 - 0, 20);
+v340.Position = UDim2.new(3 - 2, - (65 - 40), 0.5 - 0, - (21 - 11));
+v340.BackgroundColor3 = Color3.fromRGB(0, 120, 255);
+v340.Text = "-";
+v340.TextColor3 = Color3.new(1590 - (877 + 712), 1, 1 + 0);
+v340.Font = Enum.Font.GothamBold;
+v340.TextSize = 768 - (242 + 512) ;
+Instance.new('UICorner', v340).CornerRadius = UDim.new(0 - 0, 632 - (92 + 535));
+local v349 = false;
+v340.MouseButton1Click:Connect(function()
+    local v594 = 0;
+    while true do
+        if (v594 == (1 + 0)) then
+            v340.Text = (v349 and "+") or "-" ;
+            break;
+        end
+        if (v594 == 0) then
+            v349 = not v349;
+            v11:Create(v321, TweenInfo.new(0.2), {
+                ['Size'] = UDim2.new(0 - 0, 12 + 168, 0, (v349 and (109 - 79)) or v320)
+            }):Play();
+            v594 = 1 + 0 ;
+        end
+    end
+end);
+local function v350(v595, v596, v597, v598, v599)
+    local v600 = Instance.new('TextLabel', v321);
+    v600.Size = UDim2.new(0 + 0, 15 + 85, 0 - 0, 45 - 15);
+    v600.Position = UDim2.new(1785 - (1476 + 309), 10, 0, v598);
+    v600.Text = v595;
+    v600.BackgroundTransparency = 1285 - (299 + 985) ;
+    v600.TextColor3 = Color3.new(1, 1, 1 + 0);
+    v600.Font = Enum.Font.GothamMedium;
+    v600.TextSize = 32 - 22 ;
+    v600.TextXAlignment = Enum.TextXAlignment.Left;
+    local v611 = Instance.new('TextBox', v321);
+    v611.Size = UDim2.new(93 - (86 + 7), 204 - 154, 0 + 0, 904 - (672 + 208));
+    v611.Position = UDim2.new(1 + 0, - (192 - (14 + 118)), 445 - (339 + 106), v598 + 3);
+    v611.BackgroundColor3 = Color3.fromRGB(0 + 0, 8 + 7, 50);
+    v611.Text = tostring(v596);
+    v611.TextColor3 = Color3.new(1396 - (440 + 955), 1 + 0, 1);
+    v611.Font = Enum.Font.GothamBold;
+    v611.TextSize = 21 - 9 ;
+    Instance.new('UICorner', v611).CornerRadius = UDim.new(0 + 0, 12 - 7);
+    Instance.new('UIStroke', v611).Color = Color3.fromRGB(0 + 0, 541 - (260 + 93), 239 + 16);
+    local v622 = v596;
+    v611.FocusLost:Connect(function()
+        local v666 = 0 - 0 ;
+        local v667;
+        local v668;
+        while true do
+            if (v666 == (1 - 0)) then
+                if (not v667 or (v667 == "") or not v668 or (v668 <= 0)) then
+                    local v969 = 0;
+                    while true do
+                        local v991 = 1974 - (1181 + 793) ;
+                        while true do
+                            if (v991 == (0 + 0)) then
+                                if (v969 == 1) then
+                                    return;
+                                end
+                                if (v969 == (307 - (105 + 202))) then
+                                    v611.Text = tostring(v622);
+                                    v599(v622);
+                                    v969 = 1;
+                                end
+                                break;
+                            end
+                        end
+                    end
+                end
+                if (v668 > v597) then
+                    v668 = v597;
+                end
+                v666 = 2 + 0 ;
+            end
+            if (v666 == 3) then
+                v599(v668);
+                break;
+            end
+            if (v666 == (810 - (352 + 458))) then
+                v667 = v611.Text:gsub('%s+', "");
+                v668 = tonumber(v667);
+                v666 = 3 - 2 ;
+            end
+            if (v666 == (4 - 2)) then
+                v622 = v668;
+                v611.Text = tostring(v668);
+                v666 = 3;
+            end
+        end
+    end);
+end
+v350('Speed Going:', 56 + 1, 178 - 117, 986 - (438 + 511), function(v623)
+    v101 = v623;
+end);
+v350('Speed Coming:', 1412 - (1262 + 121), 1099 - (728 + 340), 1860 - (816 + 974), function(v624)
+    v102 = v624;
+end);
+v350('Lock in Speed:', 174 - 117, 219 - 158, 442 - (163 + 176), function(v625)
+    v103 = v625;
+end);
+local v351 = Instance.new('TextButton', v321);
+v351.Size = UDim2.new(0, 455 - 295, 0, 30);
+v351.Position = UDim2.new(0 - 0, 10, 0 + 0, 136);
+v351.BackgroundColor3 = Color3.fromRGB(0, 1825 - (1564 + 246), 395 - (124 + 221));
+v351.Text = 'Float: OFF';
+v351.TextColor3 = Color3.new(1, 1, 1);
+v351.Font = Enum.Font.GothamBold;
+v351.TextSize = 8 + 3 ;
+Instance.new('UICorner', v351).CornerRadius = UDim.new(0, 457 - (115 + 336));
+Instance.new('UIStroke', v351).Color = Color3.fromRGB(0, 413 - 225, 53 + 202);
+v351.MouseButton1Click:Connect(function()
+    local v626 = 46 - (45 + 1) ;
+    local v627;
+    while true do
+        if ((0 + 0) == v626) then
+            v627 = 1990 - (1282 + 708) ;
+            while true do
+                if (v627 == (1212 - (583 + 629))) then
+                    v104 = not v104;
+                    v351.Text = (v104 and 'Float: ON') or 'Float: OFF' ;
+                    v627 = 1 + 0 ;
+                end
+                if (v627 == (2 - 1)) then
+                    v351.BackgroundColor3 = (v104 and Color3.fromRGB(0, 120, 255)) or Color3.fromRGB(0, 8 + 7, 1220 - (943 + 227)) ;
+                    break;
+                end
+            end
+            break;
+        end
+    end
+end);
+local v361 = Instance.new('TextButton', v321);
+v361.Size = UDim2.new(0 + 0, 1791 - (1539 + 92), 1946 - (706 + 1240), 34);
+v361.Position = UDim2.new(258 - (81 + 177), 28 - 18, 257 - (212 + 45), 595 - 417);
+v361.BackgroundColor3 = Color3.fromRGB(1946 - (708 + 1238), 2 + 13, 17 + 33);
+v361.Text = 'Enable Duels TP';
+v361.TextColor3 = Color3.new(1, 1668 - (586 + 1081), 512 - (348 + 163));
+v361.Font = Enum.Font.GothamBold;
+v361.TextSize = 11;
+v361.BorderSizePixel = 0 + 0 ;
+Instance.new('UICorner', v361).CornerRadius = UDim.new(280 - (215 + 65), 15 - 9);
+Instance.new('UIStroke', v361).Color = Color3.fromRGB(0, 2047 - (1541 + 318), 227 + 28);
+v361.MouseButton1Click:Connect(function()
+    v112 = not v112;
+    v361.Text = (v112 and 'Disable Duels TP') or 'Enable Duels TP' ;
+    v361.BackgroundColor3 = (v112 and Color3.fromRGB(0 + 0, 91 + 29, 255)) or Color3.fromRGB(1750 - (1036 + 714), 10 + 5, 50) ;
+end);
+local v372 = Instance.new('TextLabel', v321);
+v372.Size = UDim2.new(1 + 0, - 20, 0, 1300 - (883 + 397));
+v372.Position = UDim2.new(590 - (563 + 27), 39 - 29, 1986 - (1369 + 617), 1709 - (85 + 1402));
+v372.BackgroundTransparency = 1 + 0 ;
+v372.Text = "— Auto Play Version —";
+v372.TextColor3 = Color3.fromRGB(0 - 0, 188, 658 - (274 + 129));
+v372.Font = Enum.Font.GothamBold;
+v372.TextSize = 227 - (12 + 205) ;
+local function v380(v630, v631)
+    local v632 = 0;
+    local v633;
+    local v634;
+    while true do
+        if (v632 == (0 + 0)) then
+            v633 = Instance.new('TextButton', v321);
+            v633.Size = UDim2.new(0 - 0, 155 + 5, 384 - (27 + 357), 512 - (91 + 389));
+            v633.Position = UDim2.new(297 - (90 + 207), 1 + 9, 861 - (706 + 155), v631);
+            v633.BackgroundColor3 = Color3.fromRGB(0, 120, 2050 - (730 + 1065));
+            v632 = 1564 - (1339 + 224) ;
+        end
+        if (v632 == (2 + 1)) then
+            v634.Color = Color3.fromRGB(0 + 0, 327 - 107, 1098 - (268 + 575));
+            return v633;
+        end
+        if (v632 == (1296 - (919 + 375))) then
+            v633.BorderSizePixel = 0 - 0 ;
+            Instance.new('UICorner', v633).CornerRadius = UDim.new(971 - (180 + 791), 7);
+            v634 = Instance.new('UIStroke', v633);
+            v634.Thickness = 1806.2 - (323 + 1482) ;
+            v632 = 1921 - (1177 + 741) ;
+        end
+        if (v632 == (1 + 0)) then
+            v633.TextColor3 = Color3.new(3 - 2, 1 + 0, 1);
+            v633.Font = Enum.Font.GothamBold;
+            v633.TextSize = 11;
+            v633.Text = v630;
+            v632 = 3 - 1 ;
+        end
+    end
+end
+local v381 = v380("Auto Play v1  ✔", 21 + 227);
+local v382 = v380('Auto Play v2', 397 - (96 + 13));
+local function v383(v635)
+    if v635 then
+        local v698 = 0;
+        while true do
+            if (v698 == (1921 - (962 + 959))) then
+                v381.BackgroundColor3 = Color3.fromRGB(0, 399 - 239, 15 + 65);
+                v381.Text = "Auto Play v1  ✔";
+                v698 = 1352 - (461 + 890) ;
+            end
+            if (v698 == 1) then
+                v382.BackgroundColor3 = Color3.fromRGB(0, 120, 255);
+                v382.Text = 'Auto Play v2';
+                break;
+            end
+        end
+    else
+        v382.BackgroundColor3 = Color3.fromRGB(0, 160, 80);
+        v382.Text = "Auto Play v2  ✔";
+        v381.BackgroundColor3 = Color3.fromRGB(0, 89 + 31, 255);
+        v381.Text = 'Auto Play v1';
+    end
+end
+local function v384()
+    v108 = 3 - 2 ;
+    v109 = 'none';
+    v230();
+    v383(true);
+end
+local function v385()
+    v108 = 2;
+    v106 = false;
+    v107 = false;
+    v230();
+    v383(false);
+end
+v381.MouseButton1Click:Connect(function()
+    if (v108 ~= 1) then
+        v384();
+    end
+end);
+v382.MouseButton1Click:Connect(function()
+    if (v108 ~= 2) then
+        v385();
+    end
+end);
+v383(true);
+local v386 = 'AsserDuels';
+local v387 = v386 .. '/config.json' ;
+local function v388()
+    if writefile then
+        local v703 = 0;
+        while true do
+            if (v703 == (245 - (19 + 224))) then
+                writefile(v387, v13:JSONEncode(v117));
+                break;
+            end
+            if (v703 == (1 + 0)) then
+                v117['SpeedComing'] = v102;
+                v117['LockInSpeed'] = v103;
+                v703 = 200 - (37 + 161) ;
+            end
+            if (v703 == (0 + 0)) then
+                if not isfolder(v386) then
+                    makefolder(v386);
+                end
+                v117['SpeedGoing'] = v101;
+                v703 = 1 + 0 ;
+            end
+        end
+    end
+end
+local function v389()
+    if (isfile and isfile(v387)) then
+        local v704 = 0;
+        local v705;
+        local v706;
+        while true do
+            if (v704 == 0) then
+                v705, v706 = pcall(function()
+                    return v13:JSONDecode(readfile(v387));
+                end);
+                if (v705 and (type(v706) == 'table')) then
+                    local v992 = 0;
+                    while true do
+                        if (v992 == (1 + 0)) then
+                            if v706['SpeedComing'] then
+                                v102 = v706['SpeedComing'];
+                            end
+                            if v706['LockInSpeed'] then
+                                v103 = v706['LockInSpeed'];
+                            end
+                            break;
+                        end
+                        if (v992 == 0) then
+                            for v1050, v1051 in pairs(v706) do
+                                local v1052 = 61 - (60 + 1) ;
+                                while true do
+                                    if (v1052 == (923 - (826 + 97))) then
+                                        v117[v1050] = v1051;
+                                        if v118[v1050] then
+                                            v118[v1050](v1051);
+                                        end
+                                        v1052 = 1 + 0 ;
+                                    end
+                                    if (v1052 == 1) then
+                                        if v116[v1050] then
+                                            v116[v1050].update(v1051);
+                                        end
+                                        if v194[v1050] then
+                                            v194[v1050](v1051);
+                                        end
+                                        break;
+                                    end
+                                end
+                            end
+                            if v706['SpeedGoing'] then
+                                v101 = v706['SpeedGoing'];
+                            end
+                            v992 = 3 - 2 ;
+                        end
+                    end
+                end
+                break;
+            end
+        end
+    end
+end
+v292.MouseButton1Click:Connect(function()
+    v388();
+    v292.Text = 'Saved!';
+    task.wait(1 - 0);
+    v292.Text = 'Save Config';
+end);
+local v390 = Instance.new('ScreenGui', v12);
+v390.Name = 'MenuToggleButtonGui';
+v390.ResetOnSpawn = false;
+local v393 = Instance.new('TextButton', v390);
+v393.Size = UDim2.new(685 - (375 + 310), 2059 - (1864 + 135), 0 - 0, 14 + 46);
+v393.Position = UDim2.new(0 + 0, 24 - 14, 0.4, 0);
+v393.BackgroundColor3 = Color3.fromRGB(1131 - (314 + 817), 120, 145 + 110);
+v393.Text = "Asser\nDuels";
+v393.TextColor3 = Color3.fromRGB(214 - (32 + 182), 0 + 0, 0);
+v393.Font = Enum.Font.GothamBold;
+v393.TextSize = 38 - 27 ;
+Instance.new('UICorner', v393).CornerRadius = UDim.new(1, 65 - (39 + 26));
+Instance.new('UIStroke', v393).Color = Color3.fromRGB(399 - (54 + 90), 453 - (45 + 153), 155 + 100);
+v21(v393);
+local v403 = true;
+v393.MouseButton1Click:Connect(function()
+    local v637 = 552 - (457 + 95) ;
+    while true do
+        if (v637 == (0 + 0)) then
+            v403 = not v403;
+            v235.Visible = v403;
+            break;
+        end
+    end
+end);
+v389();
+v146();
+v193();
+task.spawn(function()
+    local v638 = 0 - 0 ;
+    while true do
+        if (v638 == (0 - 0)) then
+            task.wait(3 - 2);
+            v144('Insta grab is Automatically On');
+            break;
+        end
+    end
+end);
