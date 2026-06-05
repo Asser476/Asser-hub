@@ -1,0 +1,2341 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+local Player = Players.LocalPlayer
+
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local guiScale = isMobile and 0.3 or 0.7
+
+-- ============================================
+-- CONFIG SAVE / LOAD (Floating Button Positions)
+-- ============================================
+local CONFIG_FILE = "51s_hub_button_positions.json"
+
+local function saveConfig(cfg)
+	pcall(function()
+		if writefile then
+			writefile(CONFIG_FILE, game:GetService("HttpService"):JSONEncode(cfg))
+		end
+	end)
+end
+
+local function loadConfig()
+	local ok, result = pcall(function()
+		if readfile and isfile and isfile(CONFIG_FILE) then
+			return game:GetService("HttpService"):JSONDecode(readfile(CONFIG_FILE))
+		end
+	end)
+	if ok and type(result) == "table" then return result end
+	return {}
+end
+
+local function applyButtonPosition(btn, key, cfg)
+	if cfg[key] then
+		local x = cfg[key].X
+		local y = cfg[key].Y
+		if x and y then
+			btn.Position = UDim2.new(0, x, 0, y)
+		end
+	end
+end
+
+-- ============================================
+-- HOLD TO DRAG SYSTEM
+-- ============================================
+
+local function makeHoldToDrag(button, dragKey)
+	local isDragging = false
+	local holdTimer = nil
+	local dragStarted = false
+	local dragConnection = nil
+	local mouseOffset = nil
+	local HOLD_DELAY = 0.3
+	
+	local function startHold()
+		if holdTimer then return end
+		
+		holdTimer = task.spawn(function()
+			task.wait(HOLD_DELAY)
+			if not isDragging then
+				dragStarted = true
+				isDragging = true
+				
+				local inputService = UserInputService
+				local mousePos = inputService:GetMouseLocation()
+				local buttonPos = button.AbsolutePosition
+				mouseOffset = Vector2.new(mousePos.X - buttonPos.X, mousePos.Y - buttonPos.Y)
+				
+				button.BackgroundTransparency = 0.3
+				button.TextTransparency = 0.5
+				
+				local camera = workspace.CurrentCamera
+				dragConnection = RunService.RenderStepped:Connect(function()
+					if not isDragging then return end
+					
+					local currentMousePos = UserInputService:GetMouseLocation()
+					local newPos = UDim2.new(0, currentMousePos.X - mouseOffset.X, 0, currentMousePos.Y - mouseOffset.Y)
+					
+					local screenSize = camera.ViewportSize
+					local buttonSize = button.AbsoluteSize
+					newPos = UDim2.new(
+						0, math.clamp(newPos.X.Offset, 0, screenSize.X - buttonSize.X),
+						0, math.clamp(newPos.Y.Offset, 0, screenSize.Y - buttonSize.Y)
+					)
+					
+					button.Position = newPos
+				end)
+			end
+		end)
+	end
+	
+	local function cancelHold()
+		if holdTimer then
+			task.cancel(holdTimer)
+			holdTimer = nil
+		end
+		
+		if dragStarted then
+			local cfg = loadConfig()
+			cfg[dragKey] = {X = button.Position.X.Offset, Y = button.Position.Y.Offset}
+			saveConfig(cfg)
+		end
+		
+		if dragConnection then
+			dragConnection:Disconnect()
+			dragConnection = nil
+		end
+		
+		isDragging = false
+		dragStarted = false
+		button.BackgroundTransparency = 0
+		button.TextTransparency = 0
+		mouseOffset = nil
+	end
+	
+	local inputBeganConn
+	local inputEndedConn
+	
+	inputBeganConn = button.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+		   input.UserInputType == Enum.UserInputType.Touch then
+			startHold()
+		end
+	end)
+	
+	inputEndedConn = button.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+		   input.UserInputType == Enum.UserInputType.Touch then
+			cancelHold()
+		end
+	end)
+	
+	button.AncestryChanged:Connect(function()
+		if not button.Parent then
+			if inputBeganConn then inputBeganConn:Disconnect() end
+			if inputEndedConn then inputEndedConn:Disconnect() end
+			if dragConnection then dragConnection:Disconnect() end
+			if holdTimer then task.cancel(holdTimer) end
+		end
+	end)
+end
+
+-- ============================================
+-- 51S CUSTOMIZER PANEL (Speed Boost + Carry Mode)
+-- ============================================
+
+-- Speed System
+local SpeedState = {
+    boostSpeed = 60,
+    isBoostMode = false,
+}
+local MAX_BOOST_SPEED = 60
+
+-- Carry Mode System
+local CarryState = {
+    carrySpeed = 30,
+    isCarryMode = false,
+}
+local MAX_CARRY_SPEED = 30
+
+-- Character references
+local character = nil
+local humanoid = nil
+local humanoidRootPart = nil
+
+local function onCharacterAdded(newChar)
+    character = newChar
+    humanoid = character:WaitForChild("Humanoid")
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+end
+
+if Player.Character then
+    onCharacterAdded(Player.Character)
+end
+Player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Speed display above avatar
+local speedDisplay = Instance.new("BillboardGui")
+speedDisplay.Name = "SpeedDisplay"
+speedDisplay.Size = UDim2.new(0, 150, 0, 40)
+speedDisplay.StudsOffset = Vector3.new(0, 2.5, 0)
+speedDisplay.AlwaysOnTop = true
+speedDisplay.ZIndexBehavior = Enum.ZIndexBehavior.Global
+speedDisplay.Enabled = true
+
+local speedDisplayFrame = Instance.new("Frame", speedDisplay)
+speedDisplayFrame.Size = UDim2.new(1, 0, 1, 0)
+speedDisplayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+speedDisplayFrame.BackgroundTransparency = 0.3
+speedDisplayFrame.BorderSizePixel = 0
+Instance.new("UICorner", speedDisplayFrame).CornerRadius = UDim.new(1, 0)
+
+local speedDisplayText = Instance.new("TextLabel", speedDisplayFrame)
+speedDisplayText.Size = UDim2.new(1, 0, 1, 0)
+speedDisplayText.BackgroundTransparency = 1
+speedDisplayText.Text = "Speed: 0"
+speedDisplayText.TextColor3 = Color3.fromRGB(0, 255, 255)
+speedDisplayText.TextSize = 16
+speedDisplayText.Font = Enum.Font.GothamBold
+speedDisplayText.TextStrokeTransparency = 0.2
+speedDisplayText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+
+local displayStroke = Instance.new("UIStroke", speedDisplayFrame)
+displayStroke.Thickness = 2
+displayStroke.Color = Color3.fromRGB(0, 255, 255)
+
+local modeIndicator = Instance.new("TextLabel", speedDisplayFrame)
+modeIndicator.Size = UDim2.new(1, 0, 0.4, 0)
+modeIndicator.Position = UDim2.new(0, 0, 0.6, 0)
+modeIndicator.BackgroundTransparency = 1
+modeIndicator.Text = ""
+modeIndicator.TextColor3 = Color3.fromRGB(255, 200, 50)
+modeIndicator.TextSize = 12
+modeIndicator.Font = Enum.Font.GothamBold
+modeIndicator.TextStrokeTransparency = 0.2
+modeIndicator.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+
+local function updateSpeedDisplay()
+    if not humanoidRootPart then 
+        speedDisplayText.Text = "Speed: 0"
+        return 
+    end
+    
+    local currentVel = humanoidRootPart.Velocity
+    local horizontalSpeed = math.sqrt(currentVel.X^2 + currentVel.Z^2)
+    local totalSpeed = math.floor(horizontalSpeed * 10) / 10
+    
+    speedDisplayText.Text = string.format("Speed: %.1f", totalSpeed)
+    
+    if CarryState.isCarryMode then
+        modeIndicator.Text = "[CARRY MODE]"
+        modeIndicator.TextColor3 = Color3.fromRGB(255, 200, 50)
+    elseif SpeedState.isBoostMode then
+        modeIndicator.Text = "[BOOST MODE]"
+        modeIndicator.TextColor3 = Color3.fromRGB(0, 255, 255)
+    else
+        modeIndicator.Text = ""
+    end
+    
+    if totalSpeed > 50 then
+        speedDisplayText.TextColor3 = Color3.fromRGB(255, 50, 50)
+        displayStroke.Color = Color3.fromRGB(255, 50, 50)
+    elseif totalSpeed > 30 then
+        speedDisplayText.TextColor3 = Color3.fromRGB(255, 200, 50)
+        displayStroke.Color = Color3.fromRGB(255, 200, 50)
+    else
+        speedDisplayText.TextColor3 = Color3.fromRGB(0, 255, 255)
+        displayStroke.Color = Color3.fromRGB(0, 255, 255)
+    end
+end
+
+local function attachSpeedDisplay()
+    if character then
+        local head = character:FindFirstChild("Head")
+        if head then
+            speedDisplay.Adornee = head
+            speedDisplay.Enabled = true
+        else
+            character.ChildAdded:Connect(function(child)
+                if child.Name == "Head" then
+                    speedDisplay.Adornee = child
+                    speedDisplay.Enabled = true
+                end
+            end)
+        end
+    end
+end
+
+if character then
+    attachSpeedDisplay()
+end
+Player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = character:WaitForChild("Humanoid")
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    attachSpeedDisplay()
+end)
+
+-- Speed application
+RunService.RenderStepped:Connect(function()
+    updateSpeedDisplay()
+    
+    if not humanoid or not humanoidRootPart then return end
+    
+    local moveDirection = humanoid.MoveDirection
+    if moveDirection.Magnitude == 0 then return end
+    
+    if CarryState.isCarryMode then
+        humanoidRootPart.Velocity = Vector3.new(
+            moveDirection.X * CarryState.carrySpeed,
+            humanoidRootPart.Velocity.Y,
+            moveDirection.Z * CarryState.carrySpeed
+        )
+    elseif SpeedState.isBoostMode then
+        humanoidRootPart.Velocity = Vector3.new(
+            moveDirection.X * SpeedState.boostSpeed,
+            humanoidRootPart.Velocity.Y,
+            moveDirection.Z * SpeedState.boostSpeed
+        )
+    end
+end)
+
+-- ============================================
+-- BAT AIMBOT SYSTEM
+-- ============================================
+local batAimbotEnabled = false
+local aimbotConn = nil
+local lockedTarget = nil
+local batSettings = {
+	ENGAGE_RANGE = 5,
+	AIMBOT_SPEED = 60,
+	MELEE_OFFSET = 3
+}
+
+local aimbotHighlight = Instance.new("Highlight")
+aimbotHighlight.Name = "BatAimbotESP"
+aimbotHighlight.FillColor = Color3.fromRGB(180, 0, 255)
+aimbotHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+aimbotHighlight.FillTransparency = 0.5
+aimbotHighlight.OutlineTransparency = 0
+
+local function isTargetValid(targetChar)
+    if not targetChar then return false end
+    local hum2 = targetChar:FindFirstChildOfClass("Humanoid")
+    local hrp2 = targetChar:FindFirstChild("HumanoidRootPart")
+    local ff = targetChar:FindFirstChildOfClass("ForceField")
+    return hum2 and hrp2 and hum2.Health > 0 and not ff
+end
+
+local function getBestTarget(myHRP)
+    if lockedTarget and isTargetValid(lockedTarget) then
+        return lockedTarget:FindFirstChild("HumanoidRootPart"), lockedTarget
+    end
+    local shortestDist, newTargetChar, newTargetHRP = math.huge, nil, nil
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= Player and isTargetValid(targetPlayer.Character) then
+            local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local distance = (targetHRP.Position - myHRP.Position).Magnitude
+            if distance < shortestDist then
+                shortestDist = distance
+                newTargetHRP = targetHRP
+                newTargetChar = targetPlayer.Character
+            end
+        end
+    end
+    lockedTarget = newTargetChar
+    return newTargetHRP, newTargetChar
+end
+
+local function findBatTool()
+    local c = Player.Character
+    if not c then return nil end
+    local bp = Player:FindFirstChildOfClass("Backpack")
+    local SlapList = {
+        "Bat","Slap","Iron Slap","Gold Slap","Diamond Slap","Emerald Slap",
+        "Ruby Slap","Dark Matter Slap","Flame Slap","Nuclear Slap",
+        "Galaxy Slap","Glitched Slap"
+    }
+    for _, ch in ipairs(c:GetChildren()) do
+        if ch:IsA("Tool") and (ch.Name:lower():find("bat") or table.find(SlapList, ch.Name)) then return ch end
+    end
+    if bp then
+        for _, ch in ipairs(bp:GetChildren()) do
+            if ch:IsA("Tool") and (ch.Name:lower():find("bat") or table.find(SlapList, ch.Name)) then return ch end
+        end
+    end
+    for _, name in ipairs(SlapList) do
+        local t = c:FindFirstChild(name) or (bp and bp:FindFirstChild(name))
+        if t then return t end
+    end
+end
+
+local bodyGyro = nil
+
+function startBatAimbot()
+    if aimbotConn then return end
+    local c = Player.Character
+    if not c then return end
+    local h = c:FindFirstChild("HumanoidRootPart")
+    local hm = c:FindFirstChildOfClass("Humanoid")
+    if not h or not hm then return end
+    
+    bodyGyro = h:FindFirstChild("AimbotBodyGyro")
+    if not bodyGyro then
+        bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.Name = "AimbotBodyGyro"
+        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyGyro.P = 10000
+        bodyGyro.D = 500
+        bodyGyro.Parent = h
+    end
+    
+    pcall(function() hm.AutoRotate = false end)
+    
+    batAimbotEnabled = true
+    aimbotConn = RunService.Heartbeat:Connect(function()
+        if not batAimbotEnabled then return end
+        local c2 = Player.Character
+        if not c2 then return end
+        local h2 = c2:FindFirstChild("HumanoidRootPart")
+        if not h2 then return end
+        local hm2 = c2:FindFirstChildOfClass("Humanoid")
+        local bat = findBatTool()
+        if bat and bat.Parent ~= c2 then
+            pcall(function() hm2:EquipTool(bat) end)
+        end
+        local targetHRP, targetChar = getBestTarget(h2)
+        if targetHRP and targetChar then
+            aimbotHighlight.Adornee = targetChar
+            local targetVel = targetHRP.AssemblyLinearVelocity
+            local speed = targetVel.Magnitude
+            local predictTime = math.clamp(speed / 150, 0.05, 0.2)
+            local predictedPos = targetHRP.Position + (targetVel * predictTime)
+            local dir = (predictedPos - h2.Position)
+            local dist3D = dir.Magnitude
+            local standPos = predictedPos
+            if dist3D > 0 then standPos = predictedPos - (dir.Unit * batSettings.MELEE_OFFSET) end
+            
+            local lookCFrame = CFrame.lookAt(h2.Position, predictedPos)
+            bodyGyro.CFrame = lookCFrame
+            
+            local moveDir2 = (standPos - h2.Position)
+            local distToStand = moveDir2.Magnitude
+            if distToStand > 1 then
+                h2.AssemblyLinearVelocity = moveDir2.Unit * batSettings.AIMBOT_SPEED
+            else
+                h2.AssemblyLinearVelocity = targetVel
+            end
+            if distToStand <= batSettings.ENGAGE_RANGE then
+                if bat and bat.Parent == c2 then
+                    pcall(function() bat:Activate() end)
+                end
+            end
+        else
+            lockedTarget = nil
+            if h2 then
+                h2.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            end
+            aimbotHighlight.Adornee = nil
+        end
+    end)
+end
+
+function stopBatAimbot()
+    batAimbotEnabled = false
+    if aimbotConn then aimbotConn:Disconnect(); aimbotConn = nil end
+    local c = Player.Character
+    local h = c and c:FindFirstChild("HumanoidRootPart")
+    local hm = c and c:FindFirstChildOfClass("Humanoid")
+    
+    if bodyGyro then
+        bodyGyro:Destroy()
+        bodyGyro = nil
+    end
+    
+    if h then
+        h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+    if hm then pcall(function() hm.AutoRotate = true end) end
+    lockedTarget = nil
+    aimbotHighlight.Adornee = nil
+end
+
+function toggleBatAimbot()
+    if batAimbotEnabled then 
+        stopBatAimbot() 
+    else 
+        startBatAimbot() 
+    end
+    if rows and rows.batAimbot then
+        updateBatAimbotUI()
+    end
+    updateBatButtonUI()
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.X then
+        toggleBatAimbot()
+    end
+end)
+
+Player.CharacterAdded:Connect(function()
+    task.wait(0.8)
+    if batAimbotEnabled then
+        if aimbotConn then aimbotConn:Disconnect(); aimbotConn = nil end
+        startBatAimbot()
+    end
+end)
+
+-- ============================================
+-- AUTO STEAL VARIABLES
+-- ============================================
+local autoStealEnabled = false
+local isStealing = false
+local stealStartTime = nil
+local progressConnection = nil
+local StealData = {}
+
+local StealSettings = {
+	RADIUS = 20,
+	DURATION = 1.3,
+}
+
+-- INFINITE JUMP VARIABLES
+local infJumpEnabled = false
+
+local function setupInfiniteJump()
+	UserInputService.JumpRequest:Connect(function()
+		if not infJumpEnabled then return end
+		local c = Player.Character
+		if not c then return end
+		local root = c:FindFirstChild("HumanoidRootPart")
+		local hum = c:FindFirstChildOfClass("Humanoid")
+		if root and hum and hum.Health > 0 then
+			root.Velocity = Vector3.new(root.Velocity.X, 55, root.Velocity.Z)
+		end
+	end)
+end
+setupInfiniteJump()
+
+-- DROP BRAINROT VARIABLES
+local dropEnabled = false
+local dropConnections = {}
+local AUTO_OFF_DELAY = 0.15
+
+local function stopDrop()
+	dropEnabled = false
+	for _, conn in ipairs(dropConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	dropConnections = {}
+end
+
+local function runDrop()
+	if dropEnabled then return end
+	dropEnabled = true
+	
+	local colConn = RunService.Stepped:Connect(function()
+		if not dropEnabled then return end
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= Player and player.Character then
+				for _, part in ipairs(player.Character:GetChildren()) do
+					if part:IsA("BasePart") then
+						part.CanCollide = false
+					end
+				end
+			end
+		end
+	end)
+	table.insert(dropConnections, colConn)
+	
+	task.spawn(function()
+		while dropEnabled do
+			RunService.Heartbeat:Wait()
+			local char = Player.Character
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+			if not root then continue end
+			local vel = root.Velocity
+			root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+			RunService.RenderStepped:Wait()
+			if root and root.Parent then root.Velocity = vel end
+			RunService.Stepped:Wait()
+			if root and root.Parent then root.Velocity = vel + Vector3.new(0, 0.1, 0) end
+		end
+	end)
+	
+	task.wait(AUTO_OFF_DELAY)
+	stopDrop()
+end
+
+local function toggleDrop()
+	if not dropEnabled then
+		runDrop()
+	end
+end
+
+-- TP DOWN Function
+local function doTpDown()
+	pcall(function()
+		local c = Player.Character
+		if not c then return end
+		local root = c:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+		local rp = RaycastParams.new()
+		rp.FilterDescendantsInstances = {c}
+		rp.FilterType = Enum.RaycastFilterType.Exclude
+		local res = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rp)
+		if res then 
+			local newPos = res.Position + Vector3.new(0, root.Size.Y/2 + 0.5, 0)
+			root.CFrame = CFrame.new(newPos)
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end)
+end
+
+-- AUTO STEAL FUNCTIONS
+local function ResetProgressBar(ProgressBarFill)
+	if ProgressBarFill then 
+		ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+	end
+end
+
+local function isMyPlotByName(pn)
+	local plots = workspace:FindFirstChild("Plots")
+	if not plots then return false end
+	local plot = plots:FindFirstChild(pn)
+	if not plot then return false end
+	local sign = plot:FindFirstChild("PlotSign")
+	if sign then
+		local yb = sign:FindFirstChild("YourBase")
+		if yb and yb:IsA("BillboardGui") then
+			return yb.Enabled == true
+		end
+	end
+	return false
+end
+
+local function findNearestPrompt()
+	local h = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+	if not h then return nil end
+	local plots = workspace:FindFirstChild("Plots")
+	if not plots then return nil end
+	local np, nd = nil, math.huge
+	for _, plot in ipairs(plots:GetChildren()) do
+		if isMyPlotByName(plot.Name) then continue end
+		local podiums = plot:FindFirstChild("AnimalPodiums")
+		if not podiums then continue end
+		for _, pod in ipairs(podiums:GetChildren()) do
+			pcall(function()
+				local base = pod:FindFirstChild("Base")
+				local spawn = base and base:FindFirstChild("Spawn")
+				if spawn then
+					local dist = (spawn.Position - h.Position).Magnitude
+					if dist < nd and dist <= StealSettings.RADIUS then
+						local att = spawn:FindFirstChild("PromptAttachment")
+						if att then
+							for _, ch in ipairs(att:GetChildren()) do
+								if ch:IsA("ProximityPrompt") then
+									np, nd = ch, dist
+									break
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+	return np, nd
+end
+
+local function executeSteal(prompt, ProgressBarFill)
+	if isStealing then return end
+	if not StealData[prompt] then
+		StealData[prompt] = {hold = {}, trigger = {}, ready = true}
+		pcall(function()
+			if getconnections then
+				for _, c in ipairs(getconnections(prompt.PromptButtonHoldBegan)) do
+					if c.Function then table.insert(StealData[prompt].hold, c.Function) end
+				end
+				for _, c in ipairs(getconnections(prompt.Triggered)) do
+					if c.Function then table.insert(StealData[prompt].trigger, c.Function) end
+				end
+			end
+		end)
+	end
+	local data = StealData[prompt]
+	if not data.ready then return end
+	data.ready = false
+	isStealing = true
+	stealStartTime = tick()
+	
+	if ProgressBarFill then 
+		ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	end
+	
+	if progressConnection then progressConnection:Disconnect() end
+	progressConnection = RunService.Heartbeat:Connect(function()
+		if not isStealing then 
+			progressConnection:Disconnect() 
+			return 
+		end
+		local prog = math.clamp((tick() - stealStartTime) / StealSettings.DURATION, 0, 1)
+		if ProgressBarFill then 
+			ProgressBarFill.Size = UDim2.new(prog, 0, 1, 0)
+		end
+	end)
+	
+	task.spawn(function()
+		for _, f in ipairs(data.hold) do task.spawn(f) end
+		task.wait(StealSettings.DURATION)
+		for _, f in ipairs(data.trigger) do task.spawn(f) end
+		if progressConnection then progressConnection:Disconnect(); progressConnection = nil end
+		ResetProgressBar(ProgressBarFill)
+		data.ready = true
+		isStealing = false
+	end)
+end
+
+local autoStealConnection = nil
+
+local function startAutoSteal()
+	if autoStealConnection then return end
+	autoStealConnection = RunService.Heartbeat:Connect(function()
+		if not autoStealEnabled or isStealing then return end
+		local p = findNearestPrompt()
+		if p then executeSteal(p, ProgressBarFill) end
+	end)
+end
+
+local function stopAutoSteal()
+	if autoStealConnection then
+		autoStealConnection:Disconnect()
+		autoStealConnection = nil
+	end
+	isStealing = false
+	if progressConnection then
+		progressConnection:Disconnect()
+		progressConnection = nil
+	end
+	if ProgressBarFill then ResetProgressBar(ProgressBarFill) end
+end
+
+local function toggleAutoSteal()
+	autoStealEnabled = not autoStealEnabled
+	if autoStealEnabled then startAutoSteal() else stopAutoSteal() end
+end
+
+-- TAUNT
+local tauntActive = false
+local tauntLoop = nil
+
+local function startTaunt()
+	if tauntLoop then return end
+	tauntActive = true
+	tauntLoop = task.spawn(function()
+		while tauntActive do
+			pcall(function()
+				local TCS = game:GetService("TextChatService")
+				local ch = TCS.TextChannels:FindFirstChild("RBXGeneral")
+				if ch then
+					ch:SendAsync("OWNED BY 51s")
+				else
+					local chatService = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+					if chatService then
+						local sayRequest = chatService:FindFirstChild("SayMessageRequest")
+						if sayRequest then
+							sayRequest:FireServer("OWNED BY 51s", "All")
+						end
+					end
+				end
+			end)
+			task.wait(0.5)
+		end
+	end)
+end
+
+local function stopTaunt()
+	tauntActive = false
+	if tauntLoop then task.cancel(tauntLoop); tauntLoop = nil end
+end
+
+local function toggleTaunt()
+	if tauntActive then stopTaunt() else startTaunt() end
+end
+
+-- UNWALK
+local unwalkEnabled = false
+local savedAnimations = {}
+
+local function startUnwalk()
+	local c = Player.Character
+	if not c then return end
+	local hum = c:FindFirstChildOfClass("Humanoid")
+	if hum then
+		for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:Stop() end
+	end
+	local anim = c:FindFirstChild("Animate")
+	if anim then
+		savedAnimations.Animate = anim:Clone()
+		anim:Destroy()
+	end
+end
+
+local function stopUnwalk()
+	local c = Player.Character
+	if c and savedAnimations.Animate then
+		savedAnimations.Animate:Clone().Parent = c
+		savedAnimations.Animate = nil
+	end
+end
+
+local function toggleUnwalk()
+	unwalkEnabled = not unwalkEnabled
+	if unwalkEnabled then startUnwalk() else stopUnwalk() end
+end
+
+-- OPTIMIZER + XRAY
+local optimizerEnabled = false
+local originalTransparency = {}
+local xrayEnabled = false
+local getgenv = getgenv or function() return _G end
+
+local function enableOptimizer()
+	if getgenv and getgenv.OPTIMIZER_ACTIVE then return end
+	if getgenv then getgenv.OPTIMIZER_ACTIVE = true end
+	pcall(function()
+		settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+		Lighting.GlobalShadows = false
+		Lighting.Brightness = 3
+		Lighting.FogEnd = 9e9
+	end)
+	pcall(function()
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			pcall(function()
+				if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+					obj:Destroy()
+				elseif obj:IsA("BasePart") then
+					obj.CastShadow = false
+					obj.Material = Enum.Material.Plastic
+				end
+			end)
+		end
+	end)
+	xrayEnabled = true
+	pcall(function()
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Anchored and (obj.Name:lower():find("base") or (obj.Parent and obj.Parent.Name:lower():find("base"))) then
+				originalTransparency[obj] = obj.LocalTransparencyModifier
+				obj.LocalTransparencyModifier = 0.85
+			end
+		end
+	end)
+end
+
+local function disableOptimizer()
+	if getgenv then getgenv.OPTIMIZER_ACTIVE = false end
+	if xrayEnabled then
+		for part, value in pairs(originalTransparency) do
+			if part then part.LocalTransparencyModifier = value end
+		end
+		originalTransparency = {}
+		xrayEnabled = false
+	end
+	pcall(function()
+		settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+		Lighting.GlobalShadows = true
+		Lighting.Brightness = 2
+		Lighting.FogEnd = 100000
+	end)
+end
+
+local function toggleOptimizer()
+	optimizerEnabled = not optimizerEnabled
+	if optimizerEnabled then enableOptimizer() else disableOptimizer() end
+end
+
+-- ANTI-RAGDOLL
+local antiRagdollEnabled = false
+local antiRagdollMode = nil
+local ragdollConnections = {}
+local cachedCharData = {}
+local isBoosting = false
+local BOOST_SPEED = 400
+local DEFAULT_SPEED = 16
+
+local function cacheCharacterData()
+	local char = Player.Character
+	if not char then return false end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not hum or not root then return false end
+	cachedCharData = {character = char, humanoid = hum, root = root}
+	return true
+end
+
+local function disconnectAllAntiRagdoll()
+	for _, conn in ipairs(ragdollConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	ragdollConnections = {}
+end
+
+local function isRagdolled()
+	if not cachedCharData.humanoid then return false end
+	local state = cachedCharData.humanoid:GetState()
+	local ragdollStates = {
+		[Enum.HumanoidStateType.Physics] = true,
+		[Enum.HumanoidStateType.Ragdoll] = true,
+		[Enum.HumanoidStateType.FallingDown] = true
+	}
+	if ragdollStates[state] then return true end
+	local endTime = Player:GetAttribute("RagdollEndTime")
+	if endTime and (endTime - workspace:GetServerTimeNow()) > 0 then return true end
+	return false
+end
+
+local function forceExitRagdoll()
+	if not cachedCharData.humanoid or not cachedCharData.root then return end
+	pcall(function() Player:SetAttribute("RagdollEndTime", workspace:GetServerTimeNow()) end)
+	for _, descendant in ipairs(cachedCharData.character:GetDescendants()) do
+		if descendant:IsA("BallSocketConstraint") or (descendant:IsA("Attachment") and descendant.Name:find("RagdollAttachment")) then
+			descendant:Destroy()
+		end
+	end
+	if not isBoosting then
+		isBoosting = true
+		cachedCharData.humanoid.WalkSpeed = BOOST_SPEED
+	end
+	if cachedCharData.humanoid.Health > 0 then
+		cachedCharData.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+	end
+	cachedCharData.root.Anchored = false
+end
+
+local function antiRagdollHeartbeatLoop()
+	while antiRagdollMode == "v1" do
+		task.wait()
+		local currentlyRagdolled = isRagdolled()
+		if currentlyRagdolled then
+			forceExitRagdoll()
+		elseif isBoosting and not currentlyRagdolled then
+			isBoosting = false
+			if cachedCharData.humanoid then
+				cachedCharData.humanoid.WalkSpeed = DEFAULT_SPEED
+			end
+		end
+	end
+end
+
+local function EnableAntiRagdoll()
+	if antiRagdollMode == "v1" then return end
+	if not cacheCharacterData() then return end
+	antiRagdollMode = "v1"
+	local camConn = RunService.RenderStepped:Connect(function()
+		local cam = workspace.CurrentCamera
+		if cam and cachedCharData.humanoid then
+			cam.CameraSubject = cachedCharData.humanoid
+		end
+	end)
+	table.insert(ragdollConnections, camConn)
+	local respawnConn = Player.CharacterAdded:Connect(function()
+		isBoosting = false
+		task.wait(0.5)
+		cacheCharacterData()
+	end)
+	table.insert(ragdollConnections, respawnConn)
+	task.spawn(antiRagdollHeartbeatLoop)
+end
+
+local function DisableAntiRagdoll()
+	antiRagdollMode = nil
+	if isBoosting and cachedCharData.humanoid then
+		cachedCharData.humanoid.WalkSpeed = DEFAULT_SPEED
+	end
+	isBoosting = false
+	disconnectAllAntiRagdoll()
+	cachedCharData = {}
+end
+
+local function toggleAntiRagdoll()
+	if antiRagdollEnabled then
+		DisableAntiRagdoll()
+		antiRagdollEnabled = false
+	else
+		EnableAntiRagdoll()
+		antiRagdollEnabled = true
+	end
+end
+
+-- ============================================
+-- UI CREATION
+-- ============================================
+local sg = Instance.new("ScreenGui")
+sg.Name = "MINIMAL_UI"
+sg.ResetOnSpawn = false
+sg.Parent = Player.PlayerGui
+
+-- Add speed display to the same GUI
+speedDisplay.Parent = sg
+
+-- Add aimbot highlight to player GUI
+pcall(function() aimbotHighlight.Parent = Player:WaitForChild("PlayerGui") end)
+
+-- Load saved positions
+local savedPositions = loadConfig()
+
+-- BANNER
+local bannerFrame = Instance.new("Frame", sg)
+bannerFrame.Name = "Banner"
+bannerFrame.Size = UDim2.new(0, 260, 0, 50)
+bannerFrame.Position = UDim2.new(0.5, -130, 0, 15)
+bannerFrame.BackgroundTransparency = 0
+bannerFrame.BorderSizePixel = 0
+bannerFrame.ZIndex = 10
+
+local bannerCorner = Instance.new("UICorner", bannerFrame)
+bannerCorner.CornerRadius = UDim.new(1, 0)
+
+local bannerGrad = Instance.new("UIGradient", bannerFrame)
+bannerGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+bannerGrad.Rotation = 45
+
+local bannerStroke = Instance.new("UIStroke", bannerFrame)
+bannerStroke.Thickness = 2
+bannerStroke.Color = Color3.fromRGB(255, 255, 255)
+local bannerStrokeGrad = Instance.new("UIGradient", bannerStroke)
+bannerStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+local bannerText = Instance.new("TextLabel", bannerFrame)
+bannerText.Size = UDim2.new(1, 0, 1, 0)
+bannerText.BackgroundTransparency = 1
+bannerText.Text = "51s Hub Duels"
+bannerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+bannerText.TextSize = 26
+bannerText.Font = Enum.Font.GothamBold
+bannerText.TextStrokeTransparency = 0.3
+bannerText.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+bannerText.ZIndex = 11
+
+local bannerTextGrad = Instance.new("UIGradient", bannerText)
+bannerTextGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+bannerTextGrad.Rotation = 90
+
+task.spawn(function()
+	local r = 0
+	while bannerFrame.Parent do
+		r = (r + 1) % 360
+		bannerGrad.Rotation = r
+		bannerTextGrad.Rotation = r
+		bannerStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+-- MENU TOGGLE BUTTON
+local toggleBtn = Instance.new("TextButton", sg)
+toggleBtn.Name = "ToggleButton"
+toggleBtn.Size = UDim2.new(0, 100, 0, 38)
+toggleBtn.Position = UDim2.new(0.5, -50, 0, 75)
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "MENU"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextSize = 18
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextStrokeTransparency = 0.3
+toggleBtn.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+toggleBtn.ZIndex = 10
+
+local toggleCorner = Instance.new("UICorner", toggleBtn)
+toggleCorner.CornerRadius = UDim.new(1, 0)
+
+local toggleGrad = Instance.new("UIGradient", toggleBtn)
+toggleGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+toggleGrad.Rotation = 45
+
+local toggleStroke = Instance.new("UIStroke", toggleBtn)
+toggleStroke.Thickness = 2
+toggleStroke.Color = Color3.fromRGB(255, 255, 255)
+local toggleStrokeGrad = Instance.new("UIGradient", toggleStroke)
+toggleStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+task.spawn(function()
+	local r = 0
+	while toggleBtn.Parent do
+		r = (r + 1) % 360
+		toggleGrad.Rotation = r
+		toggleStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+-- ============================================
+-- 51S CUSTOMIZER PANEL (Show/Hide Panel)
+-- ============================================
+
+local customizerPanelVisible = true
+local customizerMainPanel = nil
+local customizerExpandPanel = nil
+
+local function createCustomizerPanel()
+    -- Main Panel Button
+    customizerMainPanel = Instance.new("TextButton", sg)
+    customizerMainPanel.Name = "CustomizerPanel"
+    customizerMainPanel.Size = UDim2.new(0, 180, 0, 45)
+    customizerMainPanel.Position = UDim2.new(0.5, -90, 0.7, 0)
+    customizerMainPanel.BorderSizePixel = 0
+    customizerMainPanel.Text = "51S CUSTOMIZER"
+    customizerMainPanel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    customizerMainPanel.TextSize = 14
+    customizerMainPanel.Font = Enum.Font.GothamBold
+    customizerMainPanel.TextStrokeTransparency = 0.3
+    customizerMainPanel.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+    customizerMainPanel.ZIndex = 10
+    customizerMainPanel.Draggable = true
+    customizerMainPanel.AutoButtonColor = false
+
+    local panelGrad = Instance.new("UIGradient", customizerMainPanel)
+    panelGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+    })
+    panelGrad.Rotation = 45
+    Instance.new("UICorner", customizerMainPanel).CornerRadius = UDim.new(1, 0)
+
+    local panelStroke = Instance.new("UIStroke", customizerMainPanel)
+    panelStroke.Thickness = 2.5
+    panelStroke.Color = Color3.fromRGB(255, 255, 255)
+    local panelStrokeGrad = Instance.new("UIGradient", panelStroke)
+    panelStrokeGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+    })
+
+    local gearIcon = Instance.new("TextLabel", customizerMainPanel)
+    gearIcon.Size = UDim2.new(0, 35, 0, 35)
+    gearIcon.Position = UDim2.new(1, -42, 0.5, -17.5)
+    gearIcon.BackgroundTransparency = 1
+    gearIcon.Text = "âš™"
+    gearIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    gearIcon.TextSize = 22
+    gearIcon.Font = Enum.Font.GothamBold
+    gearIcon.ZIndex = 11
+
+    -- Expand Panel
+    customizerExpandPanel = Instance.new("Frame", sg)
+    customizerExpandPanel.Name = "CustomizerExpandPanel"
+    customizerExpandPanel.Size = UDim2.new(0, 180, 0, 0)
+    customizerExpandPanel.Position = UDim2.new(0.5, -90, 0.7, 23)
+    customizerExpandPanel.BackgroundTransparency = 0
+    customizerExpandPanel.BorderSizePixel = 0
+    customizerExpandPanel.Visible = false
+    customizerExpandPanel.ZIndex = 10
+    customizerExpandPanel.ClipsDescendants = true
+
+    local expandGrad = Instance.new("UIGradient", customizerExpandPanel)
+    expandGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+    })
+    expandGrad.Rotation = 45
+    Instance.new("UICorner", customizerExpandPanel).CornerRadius = UDim.new(0, 12)
+
+    local expandStroke = Instance.new("UIStroke", customizerExpandPanel)
+    expandStroke.Thickness = 2.5
+    expandStroke.Color = Color3.fromRGB(255, 255, 255)
+    local expandStrokeGrad = Instance.new("UIGradient", expandStroke)
+    expandStrokeGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+    })
+
+    -- Speed Boost Section
+    local boostTitle = Instance.new("TextLabel", customizerExpandPanel)
+    boostTitle.Size = UDim2.new(1, -10, 0, 22)
+    boostTitle.Position = UDim2.new(0, 8, 0, 6)
+    boostTitle.BackgroundTransparency = 1
+    boostTitle.Text = "âš¡ SPEED BOOST"
+    boostTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
+    boostTitle.TextSize = 11
+    boostTitle.Font = Enum.Font.GothamBold
+    boostTitle.TextXAlignment = Enum.TextXAlignment.Left
+    boostTitle.TextStrokeTransparency = 0.3
+    boostTitle.ZIndex = 12
+
+    local boostSpeedInput = Instance.new("TextBox", customizerExpandPanel)
+    boostSpeedInput.Size = UDim2.new(0, 60, 0, 28)
+    boostSpeedInput.Position = UDim2.new(0, 52, 0, 30)
+    boostSpeedInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    boostSpeedInput.BackgroundTransparency = 0
+    boostSpeedInput.BorderSizePixel = 0
+    boostSpeedInput.Text = tostring(SpeedState.boostSpeed)
+    boostSpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    boostSpeedInput.TextSize = 14
+    boostSpeedInput.Font = Enum.Font.GothamBold
+    boostSpeedInput.PlaceholderText = "1-60"
+    boostSpeedInput.ClearTextOnFocus = false
+    boostSpeedInput.ZIndex = 12
+    Instance.new("UICorner", boostSpeedInput).CornerRadius = UDim.new(0, 6)
+
+    local boostInputStroke = Instance.new("UIStroke", boostSpeedInput)
+    boostInputStroke.Thickness = 1.5
+    boostInputStroke.Color = Color3.fromRGB(0, 255, 255)
+
+    local boostToggle = Instance.new("TextButton", customizerExpandPanel)
+    boostToggle.Size = UDim2.new(0, 48, 0, 28)
+    boostToggle.Position = UDim2.new(0, 118, 0, 30)
+    boostToggle.BorderSizePixel = 0
+    boostToggle.Text = "OFF"
+    boostToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    boostToggle.TextSize = 12
+    boostToggle.Font = Enum.Font.GothamBold
+    boostToggle.ZIndex = 12
+
+    local boostToggleGrad = Instance.new("UIGradient", boostToggle)
+    boostToggleGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+    })
+    Instance.new("UICorner", boostToggle).CornerRadius = UDim.new(1, 0)
+
+    local boostToggleStroke = Instance.new("UIStroke", boostToggle)
+    boostToggleStroke.Thickness = 1.5
+    boostToggleStroke.Color = Color3.fromRGB(255, 80, 80)
+
+    -- Separator
+    local separator = Instance.new("Frame", customizerExpandPanel)
+    separator.Size = UDim2.new(1, -20, 0, 1)
+    separator.Position = UDim2.new(0, 10, 0, 66)
+    separator.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+    separator.BackgroundTransparency = 0.5
+    separator.BorderSizePixel = 0
+
+    -- Carry Mode Section
+    local carryTitle = Instance.new("TextLabel", customizerExpandPanel)
+    carryTitle.Size = UDim2.new(1, -10, 0, 22)
+    carryTitle.Position = UDim2.new(0, 8, 0, 74)
+    carryTitle.BackgroundTransparency = 1
+    carryTitle.Text = "ðŸ“¦ CARRY MODE"
+    carryTitle.TextColor3 = Color3.fromRGB(255, 200, 50)
+    carryTitle.TextSize = 11
+    carryTitle.Font = Enum.Font.GothamBold
+    carryTitle.TextXAlignment = Enum.TextXAlignment.Left
+    carryTitle.TextStrokeTransparency = 0.3
+    carryTitle.ZIndex = 12
+
+    local carrySpeedInput = Instance.new("TextBox", customizerExpandPanel)
+    carrySpeedInput.Size = UDim2.new(0, 60, 0, 28)
+    carrySpeedInput.Position = UDim2.new(0, 52, 0, 98)
+    carrySpeedInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    carrySpeedInput.BackgroundTransparency = 0
+    carrySpeedInput.BorderSizePixel = 0
+    carrySpeedInput.Text = tostring(CarryState.carrySpeed)
+    carrySpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    carrySpeedInput.TextSize = 14
+    carrySpeedInput.Font = Enum.Font.GothamBold
+    carrySpeedInput.PlaceholderText = "1-30"
+    carrySpeedInput.ClearTextOnFocus = false
+    carrySpeedInput.ZIndex = 12
+    Instance.new("UICorner", carrySpeedInput).CornerRadius = UDim.new(0, 6)
+
+    local carryInputStroke = Instance.new("UIStroke", carrySpeedInput)
+    carryInputStroke.Thickness = 1.5
+    carryInputStroke.Color = Color3.fromRGB(255, 200, 50)
+
+    local carryToggle = Instance.new("TextButton", customizerExpandPanel)
+    carryToggle.Size = UDim2.new(0, 48, 0, 28)
+    carryToggle.Position = UDim2.new(0, 118, 0, 98)
+    carryToggle.BorderSizePixel = 0
+    carryToggle.Text = "OFF"
+    carryToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    carryToggle.TextSize = 12
+    carryToggle.Font = Enum.Font.GothamBold
+    carryToggle.ZIndex = 12
+
+    local carryToggleGrad = Instance.new("UIGradient", carryToggle)
+    carryToggleGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+    })
+    Instance.new("UICorner", carryToggle).CornerRadius = UDim.new(1, 0)
+
+    local carryToggleStroke = Instance.new("UIStroke", carryToggle)
+    carryToggleStroke.Thickness = 1.5
+    carryToggleStroke.Color = Color3.fromRGB(255, 80, 80)
+
+    -- Update UI function for customizer
+    local function updateCustomizerUI()
+        if SpeedState.isBoostMode then
+            boostToggle.Text = "ON"
+            boostToggleGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 110, 0)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 160, 0))
+            })
+            boostToggleStroke.Color = Color3.fromRGB(80, 255, 80)
+        else
+            boostToggle.Text = "OFF"
+            boostToggleGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 0)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+            })
+            boostToggleStroke.Color = Color3.fromRGB(255, 80, 80)
+        end
+        boostSpeedInput.Text = tostring(SpeedState.boostSpeed)
+        
+        if CarryState.isCarryMode then
+            carryToggle.Text = "ON"
+            carryToggleGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 110, 0)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 160, 0))
+            })
+            carryToggleStroke.Color = Color3.fromRGB(80, 255, 80)
+            carryTitle.TextColor3 = Color3.fromRGB(80, 255, 80)
+            carryInputStroke.Color = Color3.fromRGB(80, 255, 80)
+        else
+            carryToggle.Text = "OFF"
+            carryToggleGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 0)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+            })
+            carryToggleStroke.Color = Color3.fromRGB(255, 80, 80)
+            carryTitle.TextColor3 = Color3.fromRGB(255, 200, 50)
+            carryInputStroke.Color = Color3.fromRGB(255, 200, 50)
+        end
+        carrySpeedInput.Text = tostring(CarryState.carrySpeed)
+    end
+
+    -- Toggle functions
+    local function toggleBoost()
+        if not SpeedState.isBoostMode and CarryState.isCarryMode then
+            CarryState.isCarryMode = false
+        end
+        SpeedState.isBoostMode = not SpeedState.isBoostMode
+        updateCustomizerUI()
+        local orig = boostToggle.Size
+        boostToggle.Size = UDim2.new(0, 43, 0, 25)
+        task.wait(0.05)
+        boostToggle.Size = orig
+    end
+
+    local function toggleCarry()
+        if not CarryState.isCarryMode and SpeedState.isBoostMode then
+            SpeedState.isBoostMode = false
+        end
+        CarryState.isCarryMode = not CarryState.isCarryMode
+        updateCustomizerUI()
+        local orig = carryToggle.Size
+        carryToggle.Size = UDim2.new(0, 43, 0, 25)
+        task.wait(0.05)
+        carryToggle.Size = orig
+    end
+
+    -- Connect events
+    boostToggle.MouseButton1Click:Connect(toggleBoost)
+    boostSpeedInput.FocusLost:Connect(function()
+        local value = tonumber(boostSpeedInput.Text)
+        if value and value > 0 then
+            SpeedState.boostSpeed = math.min(value, MAX_BOOST_SPEED)
+        end
+        boostSpeedInput.Text = tostring(SpeedState.boostSpeed)
+    end)
+
+    carryToggle.MouseButton1Click:Connect(toggleCarry)
+    carrySpeedInput.FocusLost:Connect(function()
+        local value = tonumber(carrySpeedInput.Text)
+        if value and value > 0 then
+            CarryState.carrySpeed = math.min(value, MAX_CARRY_SPEED)
+        end
+        carrySpeedInput.Text = tostring(CarryState.carrySpeed)
+    end)
+
+    -- Toggle panel visibility
+    local panelExpanded = false
+    gearIcon.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            panelExpanded = not panelExpanded
+            customizerExpandPanel.Visible = true
+            
+            local targetHeight = panelExpanded and 140 or 0
+            local tween = TweenService:Create(customizerExpandPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 180, 0, targetHeight)
+            })
+            tween:Play()
+            tween.Completed:Connect(function()
+                if not panelExpanded then customizerExpandPanel.Visible = false end
+            end)
+            
+            TweenService:Create(panelGrad, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Rotation = panelGrad.Rotation + 360
+            }):Play()
+        end
+    end)
+
+    -- Drag system for customizer panel
+    local dragging = false
+    local dragOffset = Vector2.new()
+    
+    customizerMainPanel.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mp = input.Position
+            local gp = gearIcon.AbsolutePosition
+            local gs = gearIcon.AbsoluteSize
+            local onGear = mp.X >= gp.X and mp.X <= gp.X + gs.X and mp.Y >= gp.Y and mp.Y <= gp.Y + gs.Y
+            if not onGear then
+                dragging = true
+                dragOffset = Vector2.new(mp.X - customizerMainPanel.AbsolutePosition.X, mp.Y - customizerMainPanel.AbsolutePosition.Y)
+            end
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local newX = input.Position.X - dragOffset.X
+            local newY = input.Position.Y - dragOffset.Y
+            customizerMainPanel.Position = UDim2.new(0, newX, 0, newY)
+            customizerExpandPanel.Position = UDim2.new(0, newX, 0, newY + 50)
+        end
+    end)
+
+    -- Animation loop for gradients
+    task.spawn(function()
+        local r = 0
+        while customizerMainPanel and customizerMainPanel.Parent do
+            r = (r + 1) % 360
+            panelGrad.Rotation = r
+            panelStrokeGrad.Rotation = r
+            expandGrad.Rotation = r
+            expandStrokeGrad.Rotation = r
+            task.wait(0.033)
+        end
+    end)
+
+    updateCustomizerUI()
+end
+
+-- Create the customizer panel
+createCustomizerPanel()
+
+-- ============================================
+-- FLOATING BUTTONS
+-- ============================================
+
+local defaults = {
+	tpDown  = UDim2.new(0, 20, 0, 200),
+	drop    = UDim2.new(0, 20, 0, 255),
+	bat     = UDim2.new(0, 20, 0, 310),
+	owned   = UDim2.new(0, 20, 0, 365),
+}
+
+-- TP DOWN BUTTON
+local tpDownBtn = Instance.new("TextButton", sg)
+tpDownBtn.Name = "TPDownButton"
+tpDownBtn.Size = UDim2.new(0, 120, 0, 45)
+tpDownBtn.Position = defaults.tpDown
+tpDownBtn.BorderSizePixel = 0
+tpDownBtn.Text = "TP DOWN"
+tpDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpDownBtn.TextSize = 16
+tpDownBtn.Font = Enum.Font.GothamBold
+tpDownBtn.TextStrokeTransparency = 0.3
+tpDownBtn.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+tpDownBtn.ZIndex = 10
+applyButtonPosition(tpDownBtn, "tpDown", savedPositions)
+
+local tpGrad = Instance.new("UIGradient", tpDownBtn)
+tpGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+tpGrad.Rotation = 45
+
+local tpCorner = Instance.new("UICorner", tpDownBtn)
+tpCorner.CornerRadius = UDim.new(1, 0)
+
+local tpStroke = Instance.new("UIStroke", tpDownBtn)
+tpStroke.Thickness = 2.5
+tpStroke.Color = Color3.fromRGB(255, 255, 255)
+local tpStrokeGrad = Instance.new("UIGradient", tpStroke)
+tpStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+task.spawn(function()
+	local r = 0
+	while tpDownBtn.Parent do
+		r = (r + 1) % 360
+		tpGrad.Rotation = r
+		tpStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+makeHoldToDrag(tpDownBtn, "tpDown")
+
+tpDownBtn.MouseButton1Click:Connect(function()
+	local originalSize = tpDownBtn.Size
+	local shrinkTween = TweenService:Create(tpDownBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(0, 115, 0, 42)})
+	local growTween   = TweenService:Create(tpDownBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = originalSize})
+	shrinkTween:Play()
+	shrinkTween.Completed:Connect(function() growTween:Play() end)
+	doTpDown()
+end)
+
+-- DROP BUTTON
+local dropBtn = Instance.new("TextButton", sg)
+dropBtn.Name = "DropButton"
+dropBtn.Size = UDim2.new(0, 120, 0, 45)
+dropBtn.Position = defaults.drop
+dropBtn.BorderSizePixel = 0
+dropBtn.Text = "DROP"
+dropBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+dropBtn.TextSize = 16
+dropBtn.Font = Enum.Font.GothamBold
+dropBtn.TextStrokeTransparency = 0.3
+dropBtn.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+dropBtn.ZIndex = 10
+applyButtonPosition(dropBtn, "drop", savedPositions)
+
+local dropGrad = Instance.new("UIGradient", dropBtn)
+dropGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+dropGrad.Rotation = 45
+
+local dropCorner = Instance.new("UICorner", dropBtn)
+dropCorner.CornerRadius = UDim.new(1, 0)
+
+local dropStroke = Instance.new("UIStroke", dropBtn)
+dropStroke.Thickness = 2.5
+dropStroke.Color = Color3.fromRGB(255, 255, 255)
+local dropStrokeGrad = Instance.new("UIGradient", dropStroke)
+dropStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+task.spawn(function()
+	local r = 0
+	while dropBtn.Parent do
+		r = (r + 1) % 360
+		dropGrad.Rotation = r
+		dropStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+makeHoldToDrag(dropBtn, "drop")
+
+dropBtn.MouseButton1Click:Connect(function()
+	local originalSize = dropBtn.Size
+	local shrinkTween = TweenService:Create(dropBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(0, 115, 0, 42)})
+	local growTween   = TweenService:Create(dropBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = originalSize})
+	shrinkTween:Play()
+	shrinkTween.Completed:Connect(function() growTween:Play() end)
+	toggleDrop()
+end)
+
+-- BAT BUTTON
+local batBtn = Instance.new("TextButton", sg)
+batBtn.Name = "BatButton"
+batBtn.Size = UDim2.new(0, 120, 0, 45)
+batBtn.Position = defaults.bat
+batBtn.BorderSizePixel = 0
+batBtn.Text = "BAT"
+batBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+batBtn.TextSize = 16
+batBtn.Font = Enum.Font.GothamBold
+batBtn.TextStrokeTransparency = 0.3
+batBtn.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+batBtn.ZIndex = 10
+applyButtonPosition(batBtn, "bat", savedPositions)
+
+local batGrad = Instance.new("UIGradient", batBtn)
+batGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+batGrad.Rotation = 45
+
+local batCorner = Instance.new("UICorner", batBtn)
+batCorner.CornerRadius = UDim.new(1, 0)
+
+local batStroke = Instance.new("UIStroke", batBtn)
+batStroke.Thickness = 2.5
+batStroke.Color = Color3.fromRGB(255, 255, 255)
+local batStrokeGrad = Instance.new("UIGradient", batStroke)
+batStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+task.spawn(function()
+	local r = 0
+	while batBtn.Parent do
+		r = (r + 1) % 360
+		batGrad.Rotation = r
+		batStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+makeHoldToDrag(batBtn, "bat")
+
+batBtn.MouseButton1Click:Connect(function()
+	local originalSize = batBtn.Size
+	local shrinkTween = TweenService:Create(batBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(0, 115, 0, 42)})
+	local growTween   = TweenService:Create(batBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = originalSize})
+	shrinkTween:Play()
+	shrinkTween.Completed:Connect(function() growTween:Play() end)
+	toggleBatAimbot()
+end)
+
+-- 51s TAUNT BUTTON
+local ownedBtn = Instance.new("TextButton", sg)
+ownedBtn.Name = "OwnedButton"
+ownedBtn.Size = UDim2.new(0, 120, 0, 45)
+ownedBtn.Position = defaults.owned
+ownedBtn.BorderSizePixel = 0
+ownedBtn.Text = "51s"
+ownedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ownedBtn.TextSize = 16
+ownedBtn.Font = Enum.Font.GothamBold
+ownedBtn.TextStrokeTransparency = 0.3
+ownedBtn.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+ownedBtn.ZIndex = 10
+applyButtonPosition(ownedBtn, "owned", savedPositions)
+
+local ownedGrad = Instance.new("UIGradient", ownedBtn)
+ownedGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 128)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 100, 0)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 128))
+})
+ownedGrad.Rotation = 45
+
+local ownedCorner = Instance.new("UICorner", ownedBtn)
+ownedCorner.CornerRadius = UDim.new(1, 0)
+
+local ownedStroke = Instance.new("UIStroke", ownedBtn)
+ownedStroke.Thickness = 2.5
+ownedStroke.Color = Color3.fromRGB(255, 255, 255)
+local ownedStrokeGrad = Instance.new("UIGradient", ownedStroke)
+ownedStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 128)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 128))
+})
+
+local function updateOwnedButtonUI()
+	if tauntActive then
+		ownedBtn.Text = "51s (ON)"
+		ownedBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
+	else
+		ownedBtn.Text = "51s"
+		ownedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+end
+
+task.spawn(function()
+	local r = 0
+	while ownedBtn.Parent do
+		r = (r + 2) % 360
+		ownedGrad.Rotation = r
+		ownedStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+makeHoldToDrag(ownedBtn, "owned")
+
+ownedBtn.MouseButton1Click:Connect(function()
+	local originalSize = ownedBtn.Size
+	local shrinkTween = TweenService:Create(ownedBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(0, 115, 0, 42)})
+	local growTween   = TweenService:Create(ownedBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = originalSize})
+	shrinkTween:Play()
+	shrinkTween.Completed:Connect(function() growTween:Play() end)
+	local originalColor = ownedBtn.TextColor3
+	ownedBtn.TextColor3 = Color3.fromRGB(255, 255, 0)
+	task.wait(0.1)
+	ownedBtn.TextColor3 = originalColor
+	toggleTaunt()
+	updateOwnedButtonUI()
+end)
+
+function updateBatButtonUI()
+	if batAimbotEnabled then
+		batBtn.Text = "BAT (ON)"
+		batBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
+	else
+		batBtn.Text = "BAT"
+		batBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+end
+
+-- ============================================
+-- PROGRESS BAR UI
+-- ============================================
+local progressBar = Instance.new("Frame", sg)
+progressBar.Size = UDim2.new(0, 420, 0, 36)
+progressBar.Position = UDim2.new(0.5, -210, 0.8, 0)
+progressBar.BackgroundTransparency = 1
+progressBar.BorderSizePixel = 0
+progressBar.ClipsDescendants = false
+progressBar.ZIndex = 999
+
+local ProgressLabel = Instance.new("TextLabel", progressBar)
+ProgressLabel.Size = UDim2.new(1, 0, 0, 22)
+ProgressLabel.Position = UDim2.new(0, 0, 0, 0)
+ProgressLabel.BackgroundTransparency = 1
+ProgressLabel.Text = ""
+ProgressLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+ProgressLabel.Font = Enum.Font.GothamBlack
+ProgressLabel.TextSize = 22
+ProgressLabel.TextXAlignment = Enum.TextXAlignment.Center
+ProgressLabel.ZIndex = 999
+
+task.spawn(function()
+	local text = "51s > Revulhub"
+	while ProgressLabel and ProgressLabel.Parent do
+		for i = 1, #text do
+			if not (ProgressLabel and ProgressLabel.Parent) then return end
+			ProgressLabel.Text = string.sub(text, 1, i)
+			task.wait(0.07)
+		end
+		task.wait(0.8)
+		for i = #text, 0, -1 do
+			if not (ProgressLabel and ProgressLabel.Parent) then return end
+			ProgressLabel.Text = string.sub(text, 1, i)
+			task.wait(0.04)
+		end
+		task.wait(0.3)
+	end
+end)
+
+local pTrack = Instance.new("Frame", progressBar)
+pTrack.Size = UDim2.new(1, 0, 0, 10)
+pTrack.Position = UDim2.new(0, 0, 1, -10)
+pTrack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+pTrack.BorderSizePixel = 0
+pTrack.ZIndex = 999
+Instance.new("UICorner", pTrack).CornerRadius = UDim.new(1, 0)
+
+local ProgressBarFill = Instance.new("Frame", pTrack)
+ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+ProgressBarFill.BorderSizePixel = 0
+ProgressBarFill.ZIndex = 999
+Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
+
+local RadiusInput = Instance.new("TextBox", progressBar)
+RadiusInput.Size = UDim2.new(0, 36, 0, 18)
+RadiusInput.Position = UDim2.new(1, -38, 0, 0)
+RadiusInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+RadiusInput.Text = tostring(StealSettings.RADIUS)
+RadiusInput.TextColor3 = Color3.fromRGB(180, 180, 180)
+RadiusInput.Font = Enum.Font.GothamBold
+RadiusInput.TextSize = 11
+RadiusInput.ZIndex = 999
+Instance.new("UICorner", RadiusInput).CornerRadius = UDim.new(0, 5)
+
+RadiusInput.FocusLost:Connect(function()
+	local n = tonumber(RadiusInput.Text)
+	if n then
+		StealSettings.RADIUS = math.clamp(math.floor(n), 5, 100)
+		RadiusInput.Text = tostring(StealSettings.RADIUS)
+	end
+end)
+
+-- ============================================
+-- MAIN SETTINGS GUI
+-- ============================================
+local main = Instance.new("Frame", sg)
+main.Name = "Main"
+main.Size = UDim2.new(0, 360 * guiScale, 0, 520 * guiScale)
+main.Position = isMobile and UDim2.new(0.5, -180 * guiScale, 0.5, -240 * guiScale) or UDim2.new(1, -380, 0, 100)
+main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+main.BackgroundTransparency = 0
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+main.Visible = true
+
+local mainCorner = Instance.new("UICorner", main)
+mainCorner.CornerRadius = UDim.new(0, 10 * guiScale)
+
+local mainStroke = Instance.new("UIStroke", main)
+mainStroke.Thickness = 2.5
+mainStroke.Color = Color3.fromRGB(255, 255, 255)
+local mainStrokeGrad = Instance.new("UIGradient", mainStroke)
+mainStrokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 100, 255)),
+	ColorSequenceKeypoint.new(0.7, Color3.fromRGB(0, 150, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+
+task.spawn(function()
+	local r = 0
+	while main.Parent do
+		r = (r + 2) % 360
+		mainStrokeGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+local header = Instance.new("Frame", main)
+header.Size = UDim2.new(1, 0, 0, 55 * guiScale)
+header.BackgroundTransparency = 1
+header.BorderSizePixel = 0
+header.ZIndex = 0
+
+local titleLabel = Instance.new("TextLabel", header)
+titleLabel.Size = UDim2.new(0, 200 * guiScale, 0, 35 * guiScale)
+titleLabel.Position = UDim2.new(0.5, -100 * guiScale, 0, 10 * guiScale)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "SETTINGS"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextStrokeTransparency = 0.3
+titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+titleLabel.ZIndex = 5
+
+local titleGrad = Instance.new("UIGradient", titleLabel)
+titleGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+titleGrad.Rotation = 90
+
+task.spawn(function()
+	local r = 0
+	while titleLabel.Parent do
+		r = (r + 1.5) % 360
+		titleGrad.Rotation = r
+		task.wait(0.033)
+	end
+end)
+
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 26 * guiScale, 0, 26 * guiScale)
+closeBtn.Position = UDim2.new(1, -34 * guiScale, 0.5, -13 * guiScale)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "Ã—"
+closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 20 * guiScale
+closeBtn.ZIndex = 5
+closeBtn.TextStrokeTransparency = 1
+
+closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
+
+local featuresColumn = Instance.new("ScrollingFrame", main)
+featuresColumn.Size = UDim2.new(0.96, 0, 1, -65 * guiScale)
+featuresColumn.Position = UDim2.new(0.02, 0, 0, 58 * guiScale)
+featuresColumn.BackgroundTransparency = 1
+featuresColumn.BorderSizePixel = 0
+featuresColumn.ClipsDescendants = true
+featuresColumn.ZIndex = 2
+featuresColumn.ScrollBarThickness = 4
+featuresColumn.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 255)
+featuresColumn.CanvasSize = UDim2.new(0, 0, 0, 0)
+featuresColumn.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local listLayout = Instance.new("UIListLayout", featuresColumn)
+listLayout.Padding = UDim.new(0, 8 * guiScale)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function createFeatureRow(title, isTapMode)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -10 * guiScale, 0, 50 * guiScale)
+	row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	row.BackgroundTransparency = 0.3
+	row.BorderSizePixel = 0
+	row.ZIndex = 3
+	
+	local rowStroke = Instance.new("UIStroke", row)
+	rowStroke.Thickness = 1.5
+	rowStroke.Color = Color3.fromRGB(255, 255, 255)
+	local rowStrokeGrad = Instance.new("UIGradient", rowStroke)
+	rowStrokeGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+	})
+	
+	task.spawn(function()
+		local r = 0
+		while rowStroke.Parent do
+			r = (r + 1.5) % 360
+			rowStrokeGrad.Rotation = r
+			task.wait(0.033)
+		end
+	end)
+	
+	local rowCorner = Instance.new("UICorner", row)
+	rowCorner.CornerRadius = UDim.new(0, 8 * guiScale)
+	
+	local label = Instance.new("TextLabel", row)
+	label.Size = UDim2.new(0.6, 0, 1, 0)
+	label.Position = UDim2.new(0, 10 * guiScale, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = title
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = 14 * guiScale
+	label.Font = Enum.Font.GothamBold
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 4
+	label.TextStrokeTransparency = 0.3
+	label.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+	
+	local labelGrad = Instance.new("UIGradient", label)
+	labelGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+	})
+	labelGrad.Rotation = 90
+	
+	local toggle = Instance.new("TextButton", row)
+	toggle.Size = UDim2.new(0, 60 * guiScale, 0, 30 * guiScale)
+	toggle.Position = UDim2.new(1, -70 * guiScale, 0.5, -15 * guiScale)
+	toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+	toggle.BorderSizePixel = 0
+	if isTapMode then
+		toggle.Text = "TAP"
+		toggle.TextColor3 = Color3.fromRGB(255, 200, 100)
+	else
+		toggle.Text = "OFF"
+		toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+	end
+	toggle.TextSize = 14 * guiScale
+	toggle.Font = Enum.Font.GothamBold
+	toggle.ZIndex = 4
+	toggle.TextStrokeTransparency = 0.2
+	toggle.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+	
+	local toggleStroke = Instance.new("UIStroke", toggle)
+	toggleStroke.Thickness = 1.2
+	toggleStroke.Color = Color3.fromRGB(255, 255, 255)
+	toggleStroke.Transparency = 0.5
+	
+	local toggleCorner = Instance.new("UICorner", toggle)
+	toggleCorner.CornerRadius = UDim.new(0, 6 * guiScale)
+	
+	return row, toggle
+end
+
+local function createNumberRow(title, initialValue, callback, minVal, maxVal)
+	minVal = minVal or 1
+	maxVal = maxVal or 200
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -10 * guiScale, 0, 44 * guiScale)
+	row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	row.BackgroundTransparency = 0.3
+	row.BorderSizePixel = 0
+	row.ZIndex = 3
+	
+	local rowStroke = Instance.new("UIStroke", row)
+	rowStroke.Thickness = 1.5
+	rowStroke.Color = Color3.fromRGB(255, 255, 255)
+	local rowStrokeGrad = Instance.new("UIGradient", rowStroke)
+	rowStrokeGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 200, 255)),
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+	})
+	
+	task.spawn(function()
+		local r = 0
+		while rowStroke.Parent do
+			r = (r + 1.5) % 360
+			rowStrokeGrad.Rotation = r
+			task.wait(0.033)
+		end
+	end)
+	
+	local rowCorner = Instance.new("UICorner", row)
+	rowCorner.CornerRadius = UDim.new(0, 8 * guiScale)
+	
+	local label = Instance.new("TextLabel", row)
+	label.Size = UDim2.new(0.6, 0, 1, 0)
+	label.Position = UDim2.new(0, 10 * guiScale, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = title
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = 14 * guiScale
+	label.Font = Enum.Font.GothamBold
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 4
+	label.TextStrokeTransparency = 0.3
+	label.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+	
+	local box = Instance.new("TextBox", row)
+	box.Size = UDim2.new(0, 80 * guiScale, 0, 30 * guiScale)
+	box.Position = UDim2.new(1, -90 * guiScale, 0.5, -15 * guiScale)
+	box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+	box.Text = tostring(initialValue)
+	box.TextColor3 = Color3.fromRGB(0, 255, 255)
+	box.Font = Enum.Font.GothamBold
+	box.TextSize = 14 * guiScale
+	box.TextXAlignment = Enum.TextXAlignment.Center
+	box.BorderSizePixel = 0
+	box.ZIndex = 4
+	
+	local boxCorner = Instance.new("UICorner", box)
+	boxCorner.CornerRadius = UDim.new(0, 6 * guiScale)
+	
+	box.FocusLost:Connect(function()
+		local val = tonumber(box.Text)
+		if val then
+			callback(math.clamp(val, minVal, maxVal))
+			box.Text = tostring(math.clamp(val, minVal, maxVal))
+		else
+			box.Text = tostring(initialValue)
+		end
+	end)
+	
+	return row, box
+end
+
+-- Create all rows
+local rows = {}
+
+local row, toggle = createFeatureRow("INFINITE JUMP", false)
+row.Parent = featuresColumn
+rows.infJump = {row = row, toggle = toggle}
+
+local row, toggle = createFeatureRow("AUTO STEAL", false)
+row.Parent = featuresColumn
+rows.autoSteal = {row = row, toggle = toggle}
+
+local row, box = createNumberRow("STEAL RADIUS", StealSettings.RADIUS, function(val)
+	StealSettings.RADIUS = math.clamp(val, 5, 100)
+	if RadiusInput then RadiusInput.Text = tostring(StealSettings.RADIUS) end
+end, 5, 100)
+row.Parent = featuresColumn
+rows.radius = {row = row, box = box}
+
+local row, box = createNumberRow("STEAL DURATION", StealSettings.DURATION, function(val)
+	StealSettings.DURATION = math.max(0.3, val)
+end, 0.3, 5)
+row.Parent = featuresColumn
+rows.duration = {row = row, box = box}
+
+local row, toggle = createFeatureRow("ANTI-RAGDOLL", false)
+row.Parent = featuresColumn
+rows.antiRagdoll = {row = row, toggle = toggle}
+
+-- BAT AIMBOT SETTINGS SECTION
+local batSeparator = Instance.new("Frame", featuresColumn)
+batSeparator.Size = UDim2.new(1, -10 * guiScale, 0, 25 * guiScale)
+batSeparator.BackgroundTransparency = 1
+batSeparator.ZIndex = 3
+
+local batSeparatorLabel = Instance.new("TextLabel", batSeparator)
+batSeparatorLabel.Size = UDim2.new(1, 0, 1, 0)
+batSeparatorLabel.BackgroundTransparency = 1
+batSeparatorLabel.Text = "âš”ï¸ BAT AIMBOT SETTINGS âš”ï¸"
+batSeparatorLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+batSeparatorLabel.TextSize = 14 * guiScale
+batSeparatorLabel.Font = Enum.Font.GothamBold
+batSeparatorLabel.TextStrokeTransparency = 0.3
+
+local row, toggle = createFeatureRow("BAT AIMBOT", false)
+row.Parent = featuresColumn
+rows.batAimbot = {row = row, toggle = toggle}
+
+local row, box = createNumberRow("AIMBOT SPEED", batSettings.AIMBOT_SPEED, function(val)
+	batSettings.AIMBOT_SPEED = math.clamp(val, 10, 200)
+end, 10, 200)
+row.Parent = featuresColumn
+rows.batSpeed = {row = row, box = box}
+
+local row, box = createNumberRow("ENGAGE RANGE", batSettings.ENGAGE_RANGE, function(val)
+	batSettings.ENGAGE_RANGE = math.clamp(val, 3, 20)
+end, 3, 20)
+row.Parent = featuresColumn
+rows.batRange = {row = row, box = box}
+
+local row, box = createNumberRow("MELEE OFFSET", batSettings.MELEE_OFFSET, function(val)
+	batSettings.MELEE_OFFSET = math.clamp(val, 1, 10)
+end, 1, 10)
+row.Parent = featuresColumn
+rows.batOffset = {row = row, box = box}
+
+-- Other features
+local row, toggle = createFeatureRow("TP DOWN", true)
+row.Parent = featuresColumn
+rows.tpDown = {row = row, toggle = toggle}
+
+local row, toggle = createFeatureRow("DROP BRAINROT", true)
+row.Parent = featuresColumn
+rows.drop = {row = row, toggle = toggle}
+
+local row, toggle = createFeatureRow("UNWALK", false)
+row.Parent = featuresColumn
+rows.unwalk = {row = row, toggle = toggle}
+
+local row, toggle = createFeatureRow("OPTIMIZER + XRAY", false)
+row.Parent = featuresColumn
+rows.optimizer = {row = row, toggle = toggle}
+
+local row, toggle = createFeatureRow("51s TAUNT", false)
+row.Parent = featuresColumn
+rows.taunt = {row = row, toggle = toggle}
+
+-- Update functions
+local function updateInfJumpUI()
+	if infJumpEnabled then
+		rows.infJump.toggle.Text = "ON"
+		rows.infJump.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.infJump.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.infJump.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.infJump.toggle.Text = "OFF"
+		rows.infJump.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.infJump.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.infJump.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateAutoStealUI()
+	if autoStealEnabled then
+		rows.autoSteal.toggle.Text = "ON"
+		rows.autoSteal.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.autoSteal.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.autoSteal.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.autoSteal.toggle.Text = "OFF"
+		rows.autoSteal.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.autoSteal.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.autoSteal.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateAntiRagdollUI()
+	if antiRagdollEnabled then
+		rows.antiRagdoll.toggle.Text = "ON"
+		rows.antiRagdoll.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.antiRagdoll.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.antiRagdoll.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.antiRagdoll.toggle.Text = "OFF"
+		rows.antiRagdoll.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.antiRagdoll.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.antiRagdoll.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateBatAimbotUI()
+	if batAimbotEnabled then
+		rows.batAimbot.toggle.Text = "ON"
+		rows.batAimbot.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.batAimbot.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.batAimbot.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.batAimbot.toggle.Text = "OFF"
+		rows.batAimbot.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.batAimbot.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.batAimbot.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateUnwalkUI()
+	if unwalkEnabled then
+		rows.unwalk.toggle.Text = "ON"
+		rows.unwalk.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.unwalk.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.unwalk.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.unwalk.toggle.Text = "OFF"
+		rows.unwalk.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.unwalk.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.unwalk.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateOptimizerUI()
+	if optimizerEnabled then
+		rows.optimizer.toggle.Text = "ON"
+		rows.optimizer.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.optimizer.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.optimizer.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.optimizer.toggle.Text = "OFF"
+		rows.optimizer.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.optimizer.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.optimizer.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+local function updateTauntUI()
+	if tauntActive then
+		rows.taunt.toggle.Text = "ON"
+		rows.taunt.toggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+		rows.taunt.toggle.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+		rows.taunt.row.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	else
+		rows.taunt.toggle.Text = "OFF"
+		rows.taunt.toggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+		rows.taunt.toggle.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
+		rows.taunt.row.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	end
+end
+
+-- Connect buttons
+rows.infJump.toggle.MouseButton1Click:Connect(function()
+	infJumpEnabled = not infJumpEnabled
+	updateInfJumpUI()
+end)
+
+rows.autoSteal.toggle.MouseButton1Click:Connect(function()
+	toggleAutoSteal()
+	updateAutoStealUI()
+end)
+
+rows.antiRagdoll.toggle.MouseButton1Click:Connect(function()
+	toggleAntiRagdoll()
+	updateAntiRagdollUI()
+end)
+
+rows.batAimbot.toggle.MouseButton1Click:Connect(function()
+	toggleBatAimbot()
+	updateBatAimbotUI()
+	updateBatButtonUI()
+end)
+
+rows.tpDown.toggle.MouseButton1Click:Connect(function()
+	doTpDown()
+	local originalColor = rows.tpDown.toggle.BackgroundColor3
+	rows.tpDown.toggle.BackgroundColor3 = Color3.fromRGB(80, 60, 40)
+	task.wait(0.1)
+	rows.tpDown.toggle.BackgroundColor3 = originalColor
+end)
+
+rows.drop.toggle.MouseButton1Click:Connect(function()
+	toggleDrop()
+	local originalColor = rows.drop.toggle.BackgroundColor3
+	rows.drop.toggle.BackgroundColor3 = Color3.fromRGB(80, 60, 40)
+	task.wait(0.1)
+	rows.drop.toggle.BackgroundColor3 = originalColor
+end)
+
+rows.unwalk.toggle.MouseButton1Click:Connect(function()
+	toggleUnwalk()
+	updateUnwalkUI()
+end)
+
+rows.optimizer.toggle.MouseButton1Click:Connect(function()
+	toggleOptimizer()
+	updateOptimizerUI()
+end)
+
+rows.taunt.toggle.MouseButton1Click:Connect(function()
+	toggleTaunt()
+	updateTauntUI()
+	updateOwnedButtonUI()
+end)
+
+-- Initialize UI states
+updateInfJumpUI()
+updateAutoStealUI()
+updateAntiRagdollUI()
+updateBatAimbotUI()
+updateUnwalkUI()
+updateOptimizerUI()
+updateTauntUI()
+updateBatButtonUI()
+updateOwnedButtonUI()
+
+-- GUI Visibility Toggle
+local guiVisible = true
+
+toggleBtn.MouseButton1Click:Connect(function()
+	guiVisible = not guiVisible
+	main.Visible = guiVisible
+	local originalSize = toggleBtn.Size
+	local shrinkTween = TweenService:Create(toggleBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(0, 94, 0, 35)})
+	local growTween   = TweenService:Create(toggleBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = originalSize})
+	shrinkTween:Play()
+	shrinkTween.Completed:Connect(function() growTween:Play() end)
+end)
+
+-- Hide customizer panel when pressing U (along with main GUI)
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.U then
+		guiVisible = not guiVisible
+		main.Visible = guiVisible
+		-- Also hide the customizer panel when hiding main GUI? Optional
+		-- customizerMainPanel.Visible = guiVisible
+	end
+end)
+
+Player.CharacterAdded:Connect(function()
+	if autoStealEnabled then
+		stopAutoSteal()
+		startAutoSteal()
+	end
+end)
+
+print("51s Hub Duels Loaded with Customizer Panel! Press X for Bat Aimbot, U to toggle menu, click gear icon to show/hide customizer panel.")
