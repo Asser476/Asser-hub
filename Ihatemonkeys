@@ -6,48 +6,9 @@ local HttpService = game:GetService("HttpService")
 local ContentProvider = game:GetService("ContentProvider")
 local LP = Players.LocalPlayer
 
--- ============================================================
--- FILE API COMPATIBILITY (Synapse, Krnl, Delta, etc.)
--- ============================================================
 local _isfile   = isfile   or (syn and syn.isfile)   or (getgenv and getgenv().isfile)   or function() return false end
 local _readfile = readfile  or (syn and syn.readfile)  or (getgenv and getgenv().readfile)  or function() return nil  end
 local _writefile= writefile or (syn and syn.writefile) or (getgenv and getgenv().writefile) or function() end
-
--- ========== MUSIC ==========
-local sound = Instance.new("Sound")
-sound.SoundId = "rbxassetid://120267378058133"
-sound.Volume = 0.8
-sound.Looped = true
-sound.Parent = workspace
-local musicPlaying = false
-local screenGui = Instance.new("ScreenGui")
-screenGui.ResetOnSpawn = false
-screenGui.Parent = game.Players.LocalPlayer.PlayerGui
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 120, 0, 40)
-btn.Position = UDim2.new(0, 10, 0.5, 0)
-btn.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
-btn.TextColor3 = Color3.fromRGB(100, 180, 255)
-btn.Text = "▶ Play Music"
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 14
-btn.Parent = screenGui
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = btn
-btn.MouseButton1Click:Connect(function()
-    if musicPlaying then
-        sound:Stop()
-        btn.Text = "▶ Play Music"
-        btn.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
-    else
-        sound:Play()
-        btn.Text = "⏹ Stop Music"
-        btn.BackgroundColor3 = Color3.fromRGB(15, 30, 60)
-    end
-    musicPlaying = not musicPlaying
-end)
--- ========== END MUSIC ==========
 
 local State = {
         normalSpeed = 62, carrySpeed = 29, laggerSpeed = 13, laggerCarrySpeed = 13,
@@ -70,7 +31,6 @@ local State = {
         infJumpMode = "manual",
         dropBrainrotToggled = false,
         tpDownToggled = false,
-        -- Keybinds
         keyAutoLeft = Enum.KeyCode.Unknown,
         keyAutoRight = Enum.KeyCode.Unknown,
         keyDropBR = Enum.KeyCode.Unknown,
@@ -78,7 +38,6 @@ local State = {
         keyAutoBat = Enum.KeyCode.Unknown,
 }
 
--- ========== AUTO-STEAL ==========
 local AutoSteal = {
         Enabled = true,
         Radius = 64,
@@ -209,7 +168,6 @@ local function stopAutoSteal()
                 if v.ready ~= nil then v.ready = true end
         end
 end
--- ========== FIN AUTO-STEAL ==========
 
 local MOVE_KEYS = {
         [Enum.KeyCode.W]=true,[Enum.KeyCode.A]=true,
@@ -235,7 +193,6 @@ local Conns = {
 local h, hrp, speedLbl
 local setAutoLeft, setAutoRight
 local setInstaGrab, setAutoBat, setInfJump, setAntiRag, setFps, setMedusaCounter, setAutoTpDown
-local setAnimToggle, setUnwalkToggle
 local setupMedusaCounter, stopMedusaCounter, startAntiRagdoll, stopAntiRagdoll
 local applyFPSBoost
 
@@ -244,8 +201,8 @@ local setSpeedToggleUI, setLaggerToggleUI
 local progressRadLbl
 
 local setMenuDropBR, setMenuTpDown
+local gui, main, settingsBtn, closeBtn
 
--- ================= AUTO-SAVE =================
 local saveDebounce = false
 local function autoSaveConfig()
         if saveDebounce then return end
@@ -266,7 +223,6 @@ local function autoSaveConfig()
                         mobileLocked=MobileButtons.Locked,
                         autoTpDown=State.autoTpDownEnabled, autoTpDownY=State.autoTpDownY,
                         infJumpMode=State.infJumpMode,
-                        -- Keybinds
                         keyAutoLeft=State.keyAutoLeft.Name,
                         keyAutoRight=State.keyAutoRight.Name,
                         keyDropBR=State.keyDropBR.Name,
@@ -277,98 +233,6 @@ local function autoSaveConfig()
                 saveDebounce = false
         end)
 end
-
--- ================= INSTANT RESET =================
-local resetPos = Vector3.new(0.076, 99997.35, -0.517)
-local activeResetClone = nil
-
-local function cleanupReset()
-    if activeResetClone then
-        activeResetClone:Destroy()
-        activeResetClone = nil
-    end
-    workspace.CurrentCamera.CameraSubject = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-    workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-    pcall(function()
-        local hGui = LP.PlayerGui:FindFirstChild("Health")
-        if hGui then hGui.Enabled = true end
-    end)
-end
-
-local function doInstantReset()
-    local char = LP.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return end
-
-    hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-    hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    cleanupReset()
-
-    pcall(function()
-        local hGui = LP.PlayerGui:FindFirstChild("Health")
-        if hGui then hGui.Enabled = false end
-        local head = char:FindFirstChild("Head")
-        if head then
-            local died = head:FindFirstChild("Died")
-            if died then died.Volume = 0 end
-        end
-    end)
-
-    char.Archivable = true
-    local clone = char:Clone()
-    clone.Name = "FakePlayer"
-    clone.Parent = workspace
-    activeResetClone = clone
-
-    for _, v in ipairs(clone:GetDescendants()) do
-        if v:IsA("LuaSourceContainer") then
-            v:Destroy()
-        elseif v:IsA("BasePart") then
-            v.Anchored = true
-            v.CanCollide = false
-        end
-    end
-
-    workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
-    local oldCamCF = workspace.CurrentCamera.CFrame
-
-    local carpet = LP.Backpack:FindFirstChild("Flying Carpet")
-    if carpet then carpet.Parent = char end
-
-    task.spawn(function()
-        for i = 1, 10 do
-            if hrp and hrp.Parent then
-                hrp.CFrame = CFrame.new(resetPos)
-                hrp.AssemblyLinearVelocity = Vector3.zero
-            end
-            RunService.PreSimulation:Wait()
-        end
-        hum.Health = 0
-    end)
-
-    task.spawn(function()
-        while activeResetClone and LP.Character == char do
-            workspace.CurrentCamera.CFrame = oldCamCF
-            RunService.RenderStepped:Wait()
-        end
-        cleanupReset()
-    end)
-end
-
-LP.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    cleanupReset()
-end)
-
--- ================= MOBILE BUTTONS =================
-local MobileButtons = {
-        Visible = true,
-        Locked = true,
-        Frame = nil,
-        Containers = {},
-        Buttons = {}
-}
 
 local function refreshUIToggles()
         if setSpeedToggleUI then setSpeedToggleUI(State.speedType == "carry") end
@@ -488,11 +352,6 @@ local function getCurrentSpeed()
         end
 end
 
-local function applyCurrentSpeed()
-        if not h then return end
-        h.WalkSpeed = getCurrentSpeed()
-end
-
 local function getAutoMoveSpeed()
         if State.laggerCarryActive then
                 return State.normalSpeed
@@ -543,7 +402,14 @@ local function runDropBrainrot()
         end)
 end
 
--- ================= MOBILE PANEL =================
+local MobileButtons = {
+        Visible = true,
+        Locked = true,
+        Frame = nil,
+        Containers = {},
+        Buttons = {}
+}
+
 local function createMobilePanel()
         local panel = Instance.new("ScreenGui")
         panel.Name = "YoHubButtons"
@@ -551,10 +417,10 @@ local function createMobilePanel()
         panel.ResetOnSpawn = false
         panel.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-        local BTN_W = 54
-        local BTN_H = 54
-        local CORNER = 12
-        local GAP = 10
+        local BTN_W = 80
+        local BTN_H = 30
+        local CORNER = 4
+        local GAP = 6
         local COL1_X = -(BTN_W + GAP + BTN_W + 10)
         local COL2_X = -(BTN_W + 10)
         local BASE_Y = 0.30
@@ -565,7 +431,7 @@ local function createMobilePanel()
                 local container = Instance.new("Frame")
                 container.Name = name
                 container.Parent = panel
-                container.BackgroundColor3 = Color3.fromRGB(8, 12, 25)
+                container.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
                 container.BackgroundTransparency = 0
                 container.BorderSizePixel = 0
                 container.Size = UDim2.new(0, BTN_W, 0, BTN_H)
@@ -575,9 +441,8 @@ local function createMobilePanel()
                 uiCorner.CornerRadius = UDim.new(0, CORNER)
                 
                 local uiStroke = Instance.new("UIStroke", container)
-                uiStroke.Color = Color3.fromRGB(60, 130, 230)
-                uiStroke.Thickness = 1.5
-                uiStroke.Transparency = 0.3
+                uiStroke.Color = Color3.fromRGB(80, 80, 100)
+                uiStroke.Thickness = 1
 
                 local btn = Instance.new("TextButton", container)
                 btn.Size = UDim2.new(1, 0, 1, 0)
@@ -585,39 +450,25 @@ local function createMobilePanel()
                 btn.BorderSizePixel = 0
                 btn.Font = Enum.Font.GothamBold
                 btn.Text = text
-                btn.TextColor3 = Color3.fromRGB(120, 180, 255)
+                btn.TextColor3 = Color3.fromRGB(200, 200, 220)
                 btn.TextSize = 11
-                btn.TextWrapped = true
+                btn.TextWrapped = false
                 btn.AutoButtonColor = false
 
                 local active = false
                 local function setActive(state)
                         active = state
                         if active then
-                                container.BackgroundColor3 = Color3.fromRGB(20, 40, 80)
+                                container.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
                                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                uiStroke.Color = Color3.fromRGB(100, 180, 255)
-                                uiStroke.Transparency = 0
+                                uiStroke.Color = Color3.fromRGB(140, 140, 180)
                         else
-                                container.BackgroundColor3 = Color3.fromRGB(8, 12, 25)
-                                btn.TextColor3 = Color3.fromRGB(120, 180, 255)
-                                uiStroke.Color = Color3.fromRGB(60, 130, 230)
-                                uiStroke.Transparency = 0.3
+                                container.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+                                btn.TextColor3 = Color3.fromRGB(200, 200, 220)
+                                uiStroke.Color = Color3.fromRGB(80, 80, 100)
                         end
                 end
 
-                btn.MouseButton1Down:Connect(function()
-                        if not isToggle then 
-                                container.BackgroundColor3 = Color3.fromRGB(30, 60, 120)
-                                btn.TextColor3 = Color3.fromRGB(255, 255, 255) 
-                        end
-                end)
-                btn.MouseButton1Up:Connect(function()
-                        if not isToggle then 
-                                container.BackgroundColor3 = Color3.fromRGB(8, 12, 25)
-                                btn.TextColor3 = Color3.fromRGB(120, 180, 255) 
-                        end
-                end)
                 btn.MouseButton1Click:Connect(function()
                         if isToggle then setActive(not active) end
                         if callback then callback(setActive, active) end
@@ -671,7 +522,7 @@ local function createMobilePanel()
                 return setActive
         end
 
-        local dropBRSetActive = makeSeparateBtn("BtnDropBR", "DROP\nBR",
+        makeSeparateBtn("BtnDropBR", "Drop BR",
                 UDim2.new(1, COL1_X, BASE_Y, ROW_Y[1]), "YoHub_dropbr.txt",
                 function(setActive, currentActive)
                         runDropBrainrot()
@@ -682,7 +533,7 @@ local function createMobilePanel()
                         end)
                 end, true)
 
-        local autoLeftSetActive = makeSeparateBtn("BtnAutoLeft", "AUTO\nLEFT",
+        local autoLeftSetActive = makeSeparateBtn("BtnAutoLeft", "Auto Left",
                 UDim2.new(1, COL2_X, BASE_Y, ROW_Y[1]), "YoHub_autoleft.txt",
                 function(setActive)
                         State.autoLeftEnabled = not State.autoLeftEnabled
@@ -692,7 +543,7 @@ local function createMobilePanel()
                         autoSaveConfig()
                 end, true)
 
-        local autoBatSetActive = makeSeparateBtn("BtnAutoBat", "BAT\nAIMBOT",
+        local autoBatSetActive = makeSeparateBtn("BtnAutoBat", "Bat Aimbot",
                 UDim2.new(1, COL1_X, BASE_Y, ROW_Y[2]), "YoHub_autobat.txt",
                 function(setActive)
                         State.autoBatToggled = not State.autoBatToggled
@@ -701,7 +552,7 @@ local function createMobilePanel()
                         autoSaveConfig()
                 end, true)
 
-        local autoRightSetActive = makeSeparateBtn("BtnAutoRight", "AUTO\nRIGHT",
+        local autoRightSetActive = makeSeparateBtn("BtnAutoRight", "Auto Right",
                 UDim2.new(1, COL2_X, BASE_Y, ROW_Y[2]), "YoHub_autoright.txt",
                 function(setActive)
                         State.autoRightEnabled = not State.autoRightEnabled
@@ -711,7 +562,7 @@ local function createMobilePanel()
                         autoSaveConfig()
                 end, true)
 
-        local tpDownSetActive = makeSeparateBtn("BtnTpDown", "TP\nDOWN",
+        makeSeparateBtn("BtnTpDown", "Tp Down",
                 UDim2.new(1, COL1_X, BASE_Y, ROW_Y[3]), "YoHub_tpdown.txt",
                 function(setActive, currentActive)
                         tpToGround()
@@ -722,28 +573,28 @@ local function createMobilePanel()
                         end)
                 end, true)
 
-        local carrySpeedSetActive = makeSeparateBtn("BtnCarrySpd", "CARRY\nSPD",
+        local carrySpeedSetActive = makeSeparateBtn("BtnCarrySpd", "Carry Spd",
                 UDim2.new(1, COL2_X, BASE_Y, ROW_Y[3]), "YoHub_carryspd.txt",
                 function(setActive)
                         toggleSpeedType()
                         setActive(State.speedType == "carry")
                 end, true)
 
-        local laggerCarrySetActive = makeSeparateBtn("BtnLaggerCarry", "LAGGER\nCARRY",
+        local laggerCarrySetActive = makeSeparateBtn("BtnLaggerCarry", "Lag Carry",
                 UDim2.new(1, COL1_X, BASE_Y, ROW_Y[4]), "YoHub_laggercarry.txt",
                 function(setActive)
                         toggleLaggerCarry()
                         setActive(State.laggerCarryActive)
                 end, true)
 
-        local laggerSetActive = makeSeparateBtn("BtnLaggerMode", "LAGGER\nMODE",
+        local laggerSetActive = makeSeparateBtn("BtnLaggerMode", "Lag Mode",
                 UDim2.new(1, COL2_X, BASE_Y, ROW_Y[4]), "YoHub_laggermode.txt",
                 function(setActive)
                         toggleLagger()
                         setActive(State.laggerActive)
                 end, true)
 
-        local dropAimbotSetActive = makeSeparateBtn("BtnDropAimbot", "DROP\nAIMBOT",
+        makeSeparateBtn("BtnDropAimbot", "Drop Aimbot",
                 UDim2.new(1, COL1_X, BASE_Y, ROW_Y[4] + BTN_H + GAP), "YoHub_dropaimbot.txt",
                 function(setActive, currentActive)
                         runDropBrainrot()
@@ -766,10 +617,7 @@ local function createMobilePanel()
                 autoBat = autoBatSetActive,
                 carrySpeed = carrySpeedSetActive,
                 lagger = laggerSetActive,
-                dropBR = dropBRSetActive,
-                tpDown = tpDownSetActive,
                 laggerCarry = laggerCarrySetActive,
-                dropAimbot = dropAimbotSetActive,
         }
 
         task.spawn(function()
@@ -785,21 +633,20 @@ local function createMobilePanel()
         return panel
 end
 
--- ================= YO HUB DUELS - BLACK & BLUE THEME =================
-local C_BG      = Color3.fromRGB(5, 8, 18)
-local C_PANEL   = Color3.fromRGB(10, 14, 28)
-local C_ROW     = Color3.fromRGB(14, 18, 35)
-local C_ROW_HOV = Color3.fromRGB(20, 28, 50)
-local C_BORDER  = Color3.fromRGB(40, 80, 160)
-local C_BORDER2 = Color3.fromRGB(60, 130, 230)
-local C_HEADER  = Color3.fromRGB(8, 12, 22)
-local C_ACCENT  = Color3.fromRGB(80, 160, 255)
-local C_ACCENT2 = Color3.fromRGB(50, 120, 220)
-local C_DIM     = Color3.fromRGB(40, 80, 140)
-local C_WHITE   = Color3.fromRGB(180, 220, 255)
-local C_ON_BG   = Color3.fromRGB(25, 55, 100)
-local C_OFF_BG  = Color3.fromRGB(12, 16, 30)
-local C_KEY_BG  = Color3.fromRGB(5, 8, 18)
+local C_BG      = Color3.fromRGB(12, 12, 20)
+local C_PANEL   = Color3.fromRGB(18, 18, 30)
+local C_ROW     = Color3.fromRGB(22, 22, 36)
+local C_ROW_HOV = Color3.fromRGB(30, 30, 48)
+local C_BORDER  = Color3.fromRGB(70, 70, 90)
+local C_BORDER2 = Color3.fromRGB(100, 100, 130)
+local C_HEADER  = Color3.fromRGB(15, 15, 26)
+local C_ACCENT  = Color3.fromRGB(180, 180, 210)
+local C_ACCENT2 = Color3.fromRGB(140, 140, 180)
+local C_DIM     = Color3.fromRGB(100, 100, 120)
+local C_WHITE   = Color3.fromRGB(220, 220, 240)
+local C_ON_BG   = Color3.fromRGB(50, 50, 70)
+local C_OFF_BG  = Color3.fromRGB(18, 18, 30)
+local C_KEY_BG  = Color3.fromRGB(12, 12, 20)
 
 local Anims = {
         idle1    = "rbxassetid://133806214992291",
@@ -938,153 +785,124 @@ local function stopUnwalk()
         end)
 end
 
-for _, name in pairs({"YoHubGUI","JispiHubGUI","MonkeyHubGUI"}) do
+for _, name in pairs({"YoHubGUI","JispiHubGUI","MonkeyHubGUI","YoHubGUI"}) do
         local old = game:GetService("CoreGui"):FindFirstChild(name)
         if old then old:Destroy() end
         local old2 = LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild(name)
         if old2 then old2:Destroy() end
 end
 
-local closeBtnRef = nil
-local miniButtonRef = nil
-local miniBtn = nil
-
-local function makeMainDraggable(frame)
-        local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
-        local startCloseBtnPos
-        
-        frame.InputBegan:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        dragging = true
-                        dragStart = inp.Position
-                        startPos = frame.Position
-                        if closeBtnRef then startCloseBtnPos = closeBtnRef.Position end
-                        inp.Changed:Connect(function()
-                                if inp.UserInputState == Enum.UserInputState.End or inp.UserInputState == Enum.UserInputState.Cancelled then
-                                        dragging = false
-                                end
-                        end)
-                end
-        end)
-        
-        frame.InputChanged:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                        dragInput = inp
-                end
-        end)
-        
-        UIS.InputChanged:Connect(function(inp)
-                if inp == dragInput and dragging then
-                        local dx = inp.Position.X - dragStart.X
-                        local dy = inp.Position.Y - dragStart.Y
-                        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + dx, startPos.Y.Scale, startPos.Y.Offset + dy)
-                        if closeBtnRef and startCloseBtnPos then
-                                closeBtnRef.Position = UDim2.new(startCloseBtnPos.X.Scale, startCloseBtnPos.X.Offset + dx, startCloseBtnPos.Y.Scale, startCloseBtnPos.Y.Offset + dy)
-                        end
-                end
-        end)
-end
-
-local function makeMiniDraggable(frame)
-        local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
-        
-        frame.InputBegan:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        dragging = true
-                        dragStart = inp.Position
-                        startPos = frame.Position
-                        inp.Changed:Connect(function()
-                                if inp.UserInputState == Enum.UserInputState.End or inp.UserInputState == Enum.UserInputState.Cancelled then
-                                        dragging = false
-                                end
-                        end)
-                end
-        end)
-        
-        frame.InputChanged:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                        dragInput = inp
-                end
-        end)
-        
-        UIS.InputChanged:Connect(function(inp)
-                if inp == dragInput and dragging then
-                        local dx = inp.Position.X - dragStart.X
-                        local dy = inp.Position.Y - dragStart.Y
-                        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + dx, startPos.Y.Scale, startPos.Y.Offset + dy)
-                end
-        end)
-end
-
-local gui = Instance.new("ScreenGui")
+gui = Instance.new("ScreenGui")
 gui.Name="YoHubGUI"; gui.ResetOnSpawn=false; gui.DisplayOrder=10
 gui.IgnoreGuiInset=true; gui.Parent=LP:WaitForChild("PlayerGui")
 
--- ========================================================================
--- STEAL PROGRESS BAR - YO HUB STYLE (Black & Blue)
--- ========================================================================
+settingsBtn = Instance.new("TextButton", gui)
+settingsBtn.Size = UDim2.new(0, 36, 0, 36)
+settingsBtn.Position = UDim2.new(0, 15, 0, 15)
+settingsBtn.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
+settingsBtn.BorderSizePixel = 0
+settingsBtn.Text = ""
+settingsBtn.AutoButtonColor = false
+settingsBtn.ZIndex = 50
+Instance.new("UICorner", settingsBtn).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", settingsBtn).Color = Color3.fromRGB(100, 100, 130)
+
+local iconContainer = Instance.new("Frame", settingsBtn)
+iconContainer.Size = UDim2.new(0, 18, 0, 18)
+iconContainer.Position = UDim2.new(0.5, -9, 0.5, -9)
+iconContainer.BackgroundTransparency = 1
+iconContainer.BorderSizePixel = 0
+iconContainer.ZIndex = 51
+
+local iconLine1 = Instance.new("Frame", iconContainer)
+iconLine1.Size = UDim2.new(0, 4, 0, 4)
+iconLine1.Position = UDim2.new(0, 0, 0, 0)
+iconLine1.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+iconLine1.BorderSizePixel = 0
+iconLine1.ZIndex = 52
+Instance.new("UICorner", iconLine1).CornerRadius = UDim.new(0, 2)
+
+local iconLine2 = Instance.new("Frame", iconContainer)
+iconLine2.Size = UDim2.new(0, 4, 0, 4)
+iconLine2.Position = UDim2.new(0, 7, 0, 0)
+iconLine2.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+iconLine2.BorderSizePixel = 0
+iconLine2.ZIndex = 52
+Instance.new("UICorner", iconLine2).CornerRadius = UDim.new(0, 2)
+
+local iconLine3 = Instance.new("Frame", iconContainer)
+iconLine3.Size = UDim2.new(0, 4, 0, 4)
+iconLine3.Position = UDim2.new(0, 14, 0, 0)
+iconLine3.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+iconLine3.BorderSizePixel = 0
+iconLine3.ZIndex = 52
+Instance.new("UICorner", iconLine3).CornerRadius = UDim.new(0, 2)
+
+local iconLine4 = Instance.new("Frame", iconContainer)
+iconLine4.Size = UDim2.new(0, 12, 0, 4)
+iconLine4.Position = UDim2.new(0, 0, 0, 7)
+iconLine4.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+iconLine4.BorderSizePixel = 0
+iconLine4.ZIndex = 52
+Instance.new("UICorner", iconLine4).CornerRadius = UDim.new(0, 2)
+
+local iconLine5 = Instance.new("Frame", iconContainer)
+iconLine5.Size = UDim2.new(0, 18, 0, 4)
+iconLine5.Position = UDim2.new(0, 0, 0, 14)
+iconLine5.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+iconLine5.BorderSizePixel = 0
+iconLine5.ZIndex = 52
+Instance.new("UICorner", iconLine5).CornerRadius = UDim.new(0, 2)
+
 local stealProgressBar = Instance.new("Frame", gui)
-stealProgressBar.Size = UDim2.new(0, 280, 0, 64)
-stealProgressBar.Position = UDim2.new(0.5, -140, 1, -80)
-stealProgressBar.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
+stealProgressBar.Size = UDim2.new(0, 280, 0, 56)
+stealProgressBar.Position = UDim2.new(0.5, -140, 1, -72)
+stealProgressBar.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
 stealProgressBar.BackgroundTransparency = 0
 stealProgressBar.BorderSizePixel = 0
 stealProgressBar.ZIndex = 100
 local spCorner = Instance.new("UICorner", stealProgressBar)
-spCorner.CornerRadius = UDim.new(0, 8)
+spCorner.CornerRadius = UDim.new(0, 6)
 local spStroke = Instance.new("UIStroke", stealProgressBar)
-spStroke.Color = Color3.fromRGB(40, 100, 200)
-spStroke.Thickness = 1.5
+spStroke.Color = Color3.fromRGB(90, 90, 120)
+spStroke.Thickness = 1
 
--- Left: % label
 local pctLbl = Instance.new("TextLabel", stealProgressBar)
-pctLbl.Size = UDim2.new(0.42, 0, 0, 28)
-pctLbl.Position = UDim2.new(0, 14, 0, 7)
+pctLbl.Size = UDim2.new(0.42, 0, 0, 24)
+pctLbl.Position = UDim2.new(0, 12, 0, 6)
 pctLbl.BackgroundTransparency = 1
 pctLbl.Text = "0%"
-pctLbl.TextColor3 = Color3.fromRGB(100, 180, 255)
+pctLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
 pctLbl.Font = Enum.Font.GothamBold
-pctLbl.TextSize = 22
+pctLbl.TextSize = 20
 pctLbl.TextXAlignment = Enum.TextXAlignment.Left
 pctLbl.ZIndex = 101
 
--- Right: "Steal Radius" label
 progressRadLbl = Instance.new("TextLabel", stealProgressBar)
-progressRadLbl.Size = UDim2.new(0.58, -14, 0, 28)
-progressRadLbl.Position = UDim2.new(0.42, 0, 0, 7)
+progressRadLbl.Size = UDim2.new(0.58, -12, 0, 24)
+progressRadLbl.Position = UDim2.new(0.42, 0, 0, 6)
 progressRadLbl.BackgroundTransparency = 1
-progressRadLbl.Text = "Steal Radius: "..AutoSteal.Radius
-progressRadLbl.TextColor3 = Color3.fromRGB(80, 150, 230)
+progressRadLbl.Text = "Radius: "..AutoSteal.Radius
+progressRadLbl.TextColor3 = Color3.fromRGB(150, 150, 180)
 progressRadLbl.Font = Enum.Font.GothamBold
-progressRadLbl.TextSize = 16
+progressRadLbl.TextSize = 14
 progressRadLbl.TextXAlignment = Enum.TextXAlignment.Right
 progressRadLbl.ZIndex = 101
 
--- Track (dark background)
 local barTrack = Instance.new("Frame", stealProgressBar)
-barTrack.Size = UDim2.new(1, -28, 0, 14)
-barTrack.Position = UDim2.new(0, 14, 0, 40)
-barTrack.BackgroundColor3 = Color3.fromRGB(10, 15, 30)
+barTrack.Size = UDim2.new(1, -24, 0, 12)
+barTrack.Position = UDim2.new(0, 12, 0, 36)
+barTrack.BackgroundColor3 = Color3.fromRGB(18, 18, 30)
 barTrack.BorderSizePixel = 0
 barTrack.ZIndex = 101
 Instance.new("UICorner", barTrack).CornerRadius = UDim.new(1, 0)
 
--- Fill: Blue gradient
 local barFill = Instance.new("Frame", barTrack)
 barFill.Size = UDim2.new(0, 0, 1, 0)
-barFill.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+barFill.BackgroundColor3 = Color3.fromRGB(120, 120, 160)
 barFill.BorderSizePixel = 0
 barFill.ZIndex = 102
 Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
-
--- Blue glow on fill
-local barGlow = Instance.new("UIGradient", barFill)
-barGlow.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 200, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 100, 220)),
-})
-barGlow.Rotation = 90
 
 AutoSteal.ProgressFill = barFill
 AutoSteal.ProgressText = pctLbl
@@ -1094,27 +912,6 @@ local function makeStealBarDraggable(frame)
     local dragInput = nil
     local dragStart = nil
     local startPos = nil
-    local activeDragConn = nil
-
-    local function stopDrag()
-        dragging = false
-        dragInput = nil
-        dragStart = nil
-        startPos = nil
-        if activeDragConn then
-            activeDragConn:Disconnect()
-            activeDragConn = nil
-        end
-    end
-
-    local function startDragWatch()
-        if activeDragConn then activeDragConn:Disconnect() end
-        activeDragConn = RunService.Heartbeat:Connect(function()
-            if dragging and MobileButtons.Locked then
-                stopDrag()
-            end
-        end)
-    end
 
     frame.InputBegan:Connect(function(input)
         if MobileButtons.Locked then return end
@@ -1122,32 +919,18 @@ local function makeStealBarDraggable(frame)
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-            startDragWatch()
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End or input.UserInputState == Enum.UserInputState.Cancelled then
-                    stopDrag()
+                    dragging = false
                 end
             end)
         end
     end)
 
-    frame.InputChanged:Connect(function(input)
-        if not dragging then return end
-        if MobileButtons.Locked then
-            stopDrag()
-            return
-        end
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
     UIS.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            if MobileButtons.Locked then
-                stopDrag()
-                return
-            end
+        if not dragging then return end
+        if MobileButtons.Locked then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
@@ -1181,32 +964,63 @@ stealProgressBar:GetPropertyChangedSignal("Position"):Connect(function()
         saveStealBarPosition()
     end
 end)
--- ========================================================================
 
-local main = Instance.new("Frame",gui)
-main.Name="Main"; main.Size=UDim2.new(0,270,0,460)
-main.Position=UDim2.new(0,20,0,20)
+main = Instance.new("Frame",gui)
+main.Name="Main"; main.Size=UDim2.new(0,300,0,420)
+main.Position=UDim2.new(0,20,0,60)
 main.BackgroundColor3=C_BG; main.BorderSizePixel=0; main.Active=true; main.ClipsDescendants=true
-Instance.new("UICorner",main).CornerRadius=UDim.new(0,14)
-
--- Main border with blue glow animation
+main.Visible = false
+Instance.new("UICorner",main).CornerRadius=UDim.new(0,8)
 local mainStroke = Instance.new("UIStroke",main)
-mainStroke.Color = Color3.fromRGB(50, 120, 240)
-mainStroke.Thickness = 2
-TweenService:Create(mainStroke, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Color=Color3.fromRGB(100, 180, 255)}):Play()
+mainStroke.Color = Color3.fromRGB(80, 80, 100)
+mainStroke.Thickness = 1.5
+
+settingsBtn.MouseButton1Click:Connect(function()
+        main.Visible = not main.Visible
+end)
+
+closeBtn = Instance.new("TextButton",gui)
+closeBtn.Size=UDim2.new(0,24,0,24)
+closeBtn.BackgroundColor3=Color3.fromRGB(18,18,30); closeBtn.BorderSizePixel=0
+closeBtn.Text=""; closeBtn.TextColor3=Color3.fromRGB(200,200,220)
+closeBtn.Font=Enum.Font.GothamBold; closeBtn.TextSize=12; closeBtn.ZIndex=50; closeBtn.Visible = false
+Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(0,4)
+local closeBtnStroke = Instance.new("UIStroke",closeBtn)
+closeBtnStroke.Color=Color3.fromRGB(100,100,130); closeBtnStroke.Thickness=1
+
+local closeX = Instance.new("Frame", closeBtn)
+closeX.Size = UDim2.new(0, 10, 0, 2)
+closeX.Position = UDim2.new(0.5, -5, 0.5, -1)
+closeX.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+closeX.BorderSizePixel = 0
+closeX.Rotation = 45
+closeX.ZIndex = 51
+
+local closeX2 = Instance.new("Frame", closeBtn)
+closeX2.Size = UDim2.new(0, 10, 0, 2)
+closeX2.Position = UDim2.new(0.5, -5, 0.5, -1)
+closeX2.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+closeX2.BorderSizePixel = 0
+closeX2.Rotation = -45
+closeX2.ZIndex = 51
+
+closeBtn.MouseButton1Click:Connect(function()
+        main.Visible = false
+        closeBtn.Visible = false
+end)
+
+main:GetPropertyChangedSignal("Visible"):Connect(function()
+        closeBtn.Visible = main.Visible
+        if main.Visible then
+                local mainPos = main.Position
+                closeBtn.Position = UDim2.new(mainPos.X.Scale, mainPos.X.Offset + 300 - 30, mainPos.Y.Scale, mainPos.Y.Offset + 8)
+        end
+end)
 
 local function saveMainPosition()
         local pos = main.Position
         local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
         pcall(function() _writefile("YoHubGUIPos.txt", str) end)
-end
-
-local function saveMiniPosition()
-        if miniBtn then
-                local pos = miniBtn.Position
-                local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
-                pcall(function() _writefile("YoHubMiniPos.txt", str) end)
-        end
 end
 
 local function loadMainPosition()
@@ -1221,105 +1035,38 @@ local function loadMainPosition()
         end
 end
 
-local function loadMiniPosition()
-        local savedPos = nil
-        pcall(function() savedPos = _readfile("YoHubMiniPos.txt") end)
-        if savedPos and savedPos ~= "" and miniBtn then
-                local parts = {}
-                for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
-                if #parts >= 4 then
-                        miniBtn.Position = UDim2.new(tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]), tonumber(parts[4]))
+local function makeMainDraggable(frame)
+        local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+        
+        frame.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+                        dragging = true
+                        dragStart = inp.Position
+                        startPos = frame.Position
+                        inp.Changed:Connect(function()
+                                if inp.UserInputState == Enum.UserInputState.End or inp.UserInputState == Enum.UserInputState.Cancelled then
+                                        dragging = false
+                                end
+                        end)
                 end
-        end
+        end)
+        
+        frame.InputChanged:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+                        dragInput = inp
+                end
+        end)
+        
+        UIS.InputChanged:Connect(function(inp)
+                if inp == dragInput and dragging then
+                        local dx = inp.Position.X - dragStart.X
+                        local dy = inp.Position.Y - dragStart.Y
+                        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + dx, startPos.Y.Scale, startPos.Y.Offset + dy)
+                end
+        end)
 end
 
--- Header with blue gradient
-local header = Instance.new("Frame",main)
-header.Size=UDim2.new(1,0,0,54); header.BackgroundColor3=C_HEADER; header.BorderSizePixel=0; header.ZIndex=5
-Instance.new("UICorner",header).CornerRadius=UDim.new(0,14)
-local headerGrad = Instance.new("UIGradient", header)
-headerGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 60, 120)),
-        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(20, 40, 80)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 100, 200)),
-        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(20, 40, 80)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 55, 110)),
-})
-headerGrad.Rotation = 45
-TweenService:Create(headerGrad, TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {Rotation = 135}):Play()
-
--- Header bottom line
-local headerDiv = Instance.new("Frame",header)
-headerDiv.Size=UDim2.new(1,0,0,2); headerDiv.Position=UDim2.new(0,0,1,-2)
-headerDiv.BackgroundColor3=Color3.fromRGB(60, 130, 240); headerDiv.BorderSizePixel=0; headerDiv.ZIndex=6
-
--- YO HUB DUELS title
-local titleLbl = Instance.new("TextLabel",header)
-titleLbl.Size=UDim2.new(1,-50,0,24); titleLbl.Position=UDim2.new(0,16,0.5,-12)
-titleLbl.BackgroundTransparency=1; titleLbl.Text="YO HUB DUELS"
-titleLbl.TextColor3=Color3.fromRGB(130, 210, 255); titleLbl.Font=Enum.Font.GothamBlack
-titleLbl.TextSize=17; titleLbl.TextXAlignment=Enum.TextXAlignment.Left; titleLbl.ZIndex=6
-
--- Close button
-local closeBtn = Instance.new("TextButton",gui)
-closeBtn.Size=UDim2.new(0,28,0,28)
-closeBtn.BackgroundColor3=Color3.fromRGB(15, 20, 40); closeBtn.BorderSizePixel=0
-closeBtn.Text="✕"; closeBtn.TextColor3=Color3.fromRGB(120, 180, 255)
-closeBtn.Font=Enum.Font.GothamBold; closeBtn.TextSize=14; closeBtn.ZIndex=50
-Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(1,0)
-local closeBtnStroke = Instance.new("UIStroke",closeBtn)
-closeBtnStroke.Color=Color3.fromRGB(60, 130, 240); closeBtnStroke.Thickness=1.5
-closeBtnRef = closeBtn
-
-closeBtn.MouseEnter:Connect(function()
-        TweenService:Create(closeBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(180, 40, 40),TextColor3=Color3.fromRGB(255, 255, 255)}):Play()
-        TweenService:Create(closeBtnStroke,TweenInfo.new(0.12),{Color=Color3.fromRGB(220, 60, 60)}):Play()
-end)
-closeBtn.MouseLeave:Connect(function()
-        TweenService:Create(closeBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(15, 20, 40),TextColor3=Color3.fromRGB(120, 180, 255)}):Play()
-        TweenService:Create(closeBtnStroke,TweenInfo.new(0.12),{Color=Color3.fromRGB(60, 130, 240)}):Play()
-end)
-closeBtn.MouseButton1Click:Connect(function()
-        main.Visible = false
-        closeBtn.Visible = false
-        if miniBtn then miniBtn.Visible = true end
-end)
-
--- Mini button
-miniBtn = Instance.new("TextButton",gui)
-miniBtn.Name = "YoHubMiniButton"
-miniBtn.Size = UDim2.new(0,140,0,32)
-miniBtn.Position = UDim2.new(0,8,0,66)
-miniBtn.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
-miniBtn.BackgroundTransparency = 0
-miniBtn.BorderSizePixel = 0
-miniBtn.Text = "YO HUB"
-miniBtn.TextColor3 = Color3.fromRGB(80, 160, 255)
-miniBtn.Font = Enum.Font.GothamBlack
-miniBtn.TextSize = 12
-miniBtn.AutoButtonColor = false
-miniBtn.Visible = false
-miniBtn.ZIndex = 50
-Instance.new("UICorner", miniBtn).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", miniBtn).Color = Color3.fromRGB(50, 120, 240)
-
-miniBtn.MouseButton1Click:Connect(function()
-        main.Visible = true
-        closeBtn.Visible = true
-        miniBtn.Visible = false
-end)
-
-miniBtn.MouseEnter:Connect(function()
-        TweenService:Create(miniBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(10, 18, 35)}):Play()
-end)
-miniBtn.MouseLeave:Connect(function()
-        TweenService:Create(miniBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(5, 8, 18)}):Play()
-end)
-
-miniButtonRef = miniBtn
-
 makeMainDraggable(main)
-makeMiniDraggable(miniBtn)
 
 local lastSaveTime = 0
 main:GetPropertyChangedSignal("Position"):Connect(function()
@@ -1329,109 +1076,147 @@ main:GetPropertyChangedSignal("Position"):Connect(function()
         end
 end)
 
-local lastMiniSaveTime = 0
-miniBtn:GetPropertyChangedSignal("Position"):Connect(function()
-        if tick() - lastMiniSaveTime > 0.5 then
-                lastMiniSaveTime = tick()
-                saveMiniPosition()
-        end
-end)
+local function makeSettingsDraggable(btn)
+        local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+        
+        btn.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+                        dragging = true
+                        dragStart = inp.Position
+                        startPos = btn.Position
+                        inp.Changed:Connect(function()
+                                if inp.UserInputState == Enum.UserInputState.End or inp.UserInputState == Enum.UserInputState.Cancelled then
+                                        dragging = false
+                                end
+                        end)
+                end
+        end)
+        
+        btn.InputChanged:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+                        dragInput = inp
+                end
+        end)
+        
+        UIS.InputChanged:Connect(function(inp)
+                if inp == dragInput and dragging then
+                        local dx = inp.Position.X - dragStart.X
+                        local dy = inp.Position.Y - dragStart.Y
+                        btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + dx, startPos.Y.Scale, startPos.Y.Offset + dy)
+                end
+        end)
+end
 
-local function updateCloseButtonPosition()
-        if main.Visible then
-                local mainPos = main.Position
-                closeBtn.Position = UDim2.new(mainPos.X.Scale, mainPos.X.Offset + 270 - 36, mainPos.Y.Scale, mainPos.Y.Offset + 13)
+makeSettingsDraggable(settingsBtn)
+
+local function saveSettingsPosition()
+        local pos = settingsBtn.Position
+        local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+        pcall(function() _writefile("YoHubSettingsPos.txt", str) end)
+end
+
+local function loadSettingsPosition()
+        local savedPos = nil
+        pcall(function() savedPos = _readfile("YoHubSettingsPos.txt") end)
+        if savedPos and savedPos ~= "" then
+                local parts = {}
+                for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
+                if #parts >= 4 then
+                        settingsBtn.Position = UDim2.new(tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]), tonumber(parts[4]))
+                end
         end
 end
 
-main:GetPropertyChangedSignal("Position"):Connect(updateCloseButtonPosition)
-main:GetPropertyChangedSignal("Visible"):Connect(updateCloseButtonPosition)
+local lastSettingsSave = 0
+settingsBtn:GetPropertyChangedSignal("Position"):Connect(function()
+        if tick() - lastSettingsSave > 0.5 then
+                lastSettingsSave = tick()
+                saveSettingsPosition()
+        end
+end)
 
--- Scroll frame
+local header = Instance.new("Frame",main)
+header.Size=UDim2.new(1,0,0,46); header.BackgroundColor3=C_HEADER; header.BorderSizePixel=0; header.ZIndex=5
+Instance.new("UICorner",header).CornerRadius=UDim.new(0,8)
+
+local titleLbl = Instance.new("TextLabel",header)
+titleLbl.Size=UDim2.new(1,-16,0,46); titleLbl.Position=UDim2.new(0,16,0,0)
+titleLbl.BackgroundTransparency=1; titleLbl.Text="YO HUB"
+titleLbl.TextColor3=Color3.fromRGB(200,200,220); titleLbl.Font=Enum.Font.GothamBlack
+titleLbl.TextSize=16; titleLbl.TextXAlignment=Enum.TextXAlignment.Left; titleLbl.ZIndex=6
+
 local scroll = Instance.new("ScrollingFrame",main)
-scroll.Size=UDim2.new(1,0,1,-54); scroll.Position=UDim2.new(0,0,0,54)
+scroll.Size=UDim2.new(1,0,1,-46); scroll.Position=UDim2.new(0,0,0,46)
 scroll.BackgroundTransparency=1; scroll.BorderSizePixel=0; scroll.ScrollBarThickness=3
-scroll.ScrollBarImageColor3=Color3.fromRGB(60, 130, 240); scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y
+scroll.ScrollBarImageColor3=Color3.fromRGB(100,100,130); scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y
 scroll.CanvasSize=UDim2.new(0,0,0,0); scroll.ZIndex=2
 local listLayout = Instance.new("UIListLayout",scroll)
-listLayout.SortOrder=Enum.SortOrder.LayoutOrder; listLayout.Padding=UDim.new(0,3)
+listLayout.SortOrder=Enum.SortOrder.LayoutOrder; listLayout.Padding=UDim.new(0,2)
 local pad = Instance.new("UIPadding",scroll)
 pad.PaddingLeft=UDim.new(0,10); pad.PaddingRight=UDim.new(0,10)
-pad.PaddingTop=UDim.new(0,10); pad.PaddingBottom=UDim.new(0,12)
+pad.PaddingTop=UDim.new(0,8); pad.PaddingBottom=UDim.new(0,10)
 
 local lo = 0
 local function LO() lo+=1; return lo end
 
-local function makeGap(px)
-        local f=Instance.new("Frame",scroll); f.Size=UDim2.new(1,0,0,px or 4)
-        f.BackgroundTransparency=1; f.BorderSizePixel=0; f.LayoutOrder=LO()
-end
-
 local function makeSectionLabel(text)
-        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,24)
+        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,22)
         row.BackgroundTransparency=1; row.BorderSizePixel=0; row.LayoutOrder=LO()
         local lbl=Instance.new("TextLabel",row); lbl.Size=UDim2.new(1,0,1,0)
-        lbl.BackgroundTransparency=1; lbl.Text=text:upper()
-        lbl.TextColor3=Color3.fromRGB(70, 140, 230)
+        lbl.BackgroundTransparency=1; lbl.Text=text
+        lbl.TextColor3=Color3.fromRGB(130,130,160)
         lbl.Font=Enum.Font.GothamBlack; lbl.TextSize=11
         lbl.TextXAlignment=Enum.TextXAlignment.Left
-        
-        -- Small accent line
-        local line = Instance.new("Frame",row)
-        line.Size = UDim2.new(0,30,0,2)
-        line.Position = UDim2.new(0,0,1,-4)
-        line.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
-        line.BorderSizePixel = 0
 end
 
 local function makeInputRow(label, default, onChange)
         local row = Instance.new("Frame", scroll)
-        row.Size = UDim2.new(1,0,0,36)
+        row.Size = UDim2.new(1,0,0,34)
         row.BackgroundColor3 = C_ROW
         row.BorderSizePixel = 0
         row.LayoutOrder = LO()
-        Instance.new("UICorner",row).CornerRadius = UDim.new(0,8)
+        Instance.new("UICorner",row).CornerRadius = UDim.new(0,6)
         
         local lbl = Instance.new("TextLabel",row)
-        lbl.Size = UDim2.new(0.52,0,1,0)
-        lbl.Position = UDim2.new(0,12,0,0)
+        lbl.Size = UDim2.new(0.55,0,1,0)
+        lbl.Position = UDim2.new(0,10,0,0)
         lbl.BackgroundTransparency = 1
         lbl.Text = label
-        lbl.TextColor3 = Color3.fromRGB(160, 210, 255)
+        lbl.TextColor3 = Color3.fromRGB(190,190,210)
         lbl.Font = Enum.Font.GothamBold
-        lbl.TextSize = 12
+        lbl.TextSize = 11
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.ZIndex = 2
         
         local box = Instance.new("TextBox",row)
-        box.Size = UDim2.new(0,85,0,28)
-        box.Position = UDim2.new(1,-91,0.5,-14)
-        box.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
+        box.Size = UDim2.new(0,80,0,26)
+        box.Position = UDim2.new(1,-86,0.5,-13)
+        box.BackgroundColor3 = Color3.fromRGB(12,12,20)
         box.BorderSizePixel = 0
         box.Text = tostring(default)
-        box.TextColor3 = Color3.fromRGB(120, 200, 255)
+        box.TextColor3 = Color3.fromRGB(200,200,220)
         box.Font = Enum.Font.GothamBold
-        box.TextSize = 14
+        box.TextSize = 13
         box.ClearTextOnFocus = true
         box.PlaceholderText = "0"
         box.ZIndex = 3
-        Instance.new("UICorner",box).CornerRadius = UDim.new(0,6)
+        Instance.new("UICorner",box).CornerRadius = UDim.new(0,4)
         local bs = Instance.new("UIStroke",box)
-        bs.Color = Color3.fromRGB(50, 110, 210)
-        bs.Thickness = 1.5
+        bs.Color = Color3.fromRGB(90,90,120)
+        bs.Thickness = 1
         
         box.InputBegan:Connect(function(input)
                 input:StopPropagation()
         end)
         
         box.Focused:Connect(function()
-                TweenService:Create(bs,TweenInfo.new(0.15),{Color=Color3.fromRGB(80, 170, 255)}):Play()
-                box.BackgroundColor3 = Color3.fromRGB(8, 12, 25)
+                TweenService:Create(bs,TweenInfo.new(0.15),{Color=Color3.fromRGB(150,150,190)}):Play()
+                box.BackgroundColor3 = Color3.fromRGB(16,16,28)
         end)
         
         box.FocusLost:Connect(function(enterPressed)
-                TweenService:Create(bs,TweenInfo.new(0.15),{Color=Color3.fromRGB(50, 110, 210)}):Play()
-                box.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
+                TweenService:Create(bs,TweenInfo.new(0.15),{Color=Color3.fromRGB(90,90,120)}):Play()
+                box.BackgroundColor3 = Color3.fromRGB(12,12,20)
                 local num = tonumber(box.Text)
                 if num ~= nil then
                         local finalVal = math.floor(math.clamp(num, 0, 500))
@@ -1457,51 +1242,51 @@ local function makeInputRow(label, default, onChange)
 end
 
 local function makeStatusRow(label, valTxt)
-        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,30); row.BackgroundColor3=C_ROW
+        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,28); row.BackgroundColor3=C_ROW
         row.BorderSizePixel=0; row.LayoutOrder=LO()
-        Instance.new("UICorner",row).CornerRadius=UDim.new(0,8)
-        local lbl=Instance.new("TextLabel",row); lbl.Size=UDim2.new(0.5,0,1,0); lbl.Position=UDim2.new(0,12,0,0)
+        Instance.new("UICorner",row).CornerRadius=UDim.new(0,6)
+        local lbl=Instance.new("TextLabel",row); lbl.Size=UDim2.new(0.5,0,1,0); lbl.Position=UDim2.new(0,10,0,0)
         lbl.BackgroundTransparency=1; lbl.Text=label
-        lbl.TextColor3=Color3.fromRGB(160, 210, 255); lbl.Font=Enum.Font.GothamBold
-        lbl.TextSize=12; lbl.TextXAlignment=Enum.TextXAlignment.Left
+        lbl.TextColor3=Color3.fromRGB(190,190,210); lbl.Font=Enum.Font.GothamBold
+        lbl.TextSize=11; lbl.TextXAlignment=Enum.TextXAlignment.Left
         local val=Instance.new("TextLabel",row); val.Size=UDim2.new(0.45,-10,1,0); val.Position=UDim2.new(0.52,0,0,0)
         val.BackgroundTransparency=1; val.Text=valTxt
-        val.TextColor3=Color3.fromRGB(100, 200, 255); val.Font=Enum.Font.GothamBold
-        val.TextSize=12; val.TextXAlignment=Enum.TextXAlignment.Right
+        val.TextColor3=Color3.fromRGB(150,150,180); val.Font=Enum.Font.GothamBold
+        val.TextSize=11; val.TextXAlignment=Enum.TextXAlignment.Right
         return val
 end
 
 local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChanged, keybindStateKey)
-        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,32); row.BackgroundColor3=C_ROW; row.LayoutOrder=LO()
-        Instance.new("UICorner",row).CornerRadius=UDim.new(0,8)
+        local row=Instance.new("Frame",scroll); row.Size=UDim2.new(1,0,0,30); row.BackgroundColor3=C_ROW; row.LayoutOrder=LO()
+        Instance.new("UICorner",row).CornerRadius=UDim.new(0,6)
 
-        local lblWidth = keybindStateKey and 0.38 or (defaultKey and 0.5 or 0.65)
+        local lblWidth = keybindStateKey and 0.4 or (defaultKey and 0.5 or 0.65)
         local lbl=Instance.new("TextLabel",row)
         lbl.Size=UDim2.new(lblWidth, -4, 1, 0)
         lbl.Position=UDim2.new(0,10,0,0)
         lbl.BackgroundTransparency=1; lbl.Text=label
-        lbl.TextColor3=Color3.fromRGB(160, 210, 255); lbl.Font=Enum.Font.GothamBold
+        lbl.TextColor3=Color3.fromRGB(190,190,210); lbl.Font=Enum.Font.GothamBold
         lbl.TextSize=11; lbl.TextXAlignment=Enum.TextXAlignment.Left
 
         local keyBtn=nil
         if defaultKey and not keybindStateKey then
-                keyBtn=Instance.new("TextButton",row); keyBtn.Size=UDim2.new(0,64,0,20); keyBtn.Position=UDim2.new(1,-120,0.5,-10)
+                keyBtn=Instance.new("TextButton",row); keyBtn.Size=UDim2.new(0,60,0,18); keyBtn.Position=UDim2.new(1,-116,0.5,-9)
                 keyBtn.BackgroundColor3=C_KEY_BG; keyBtn.BorderSizePixel=0; keyBtn.Text=defaultKey.Name
-                keyBtn.TextColor3=Color3.fromRGB(100, 180, 255); keyBtn.Font=Enum.Font.GothamBold
-                keyBtn.TextSize=10; keyBtn.ZIndex=5
+                keyBtn.TextColor3=Color3.fromRGB(180,180,210); keyBtn.Font=Enum.Font.GothamBold
+                keyBtn.TextSize=9; keyBtn.ZIndex=5
                 Instance.new("UICorner",keyBtn).CornerRadius=UDim.new(0,4)
-                local ks=Instance.new("UIStroke",keyBtn); ks.Color=Color3.fromRGB(50, 110, 210); ks.Thickness=1
+                local ks=Instance.new("UIStroke",keyBtn); ks.Color=Color3.fromRGB(90,90,120); ks.Thickness=1
                 local kListening=false; local kConn
                 local function kStop(key)
                         kListening=false; if kConn then kConn:Disconnect(); kConn=nil end
-                        TweenService:Create(ks,TweenInfo.new(0.12),{Color=Color3.fromRGB(50, 110, 210)}):Play()
-                        keyBtn.TextColor3=Color3.fromRGB(100, 180, 255)
+                        TweenService:Create(ks,TweenInfo.new(0.12),{Color=Color3.fromRGB(90,90,120)}):Play()
+                        keyBtn.TextColor3=Color3.fromRGB(180,180,210)
                         if key then keyBtn.Text=key.Name; if onKeyChanged then onKeyChanged(key) end; autoSaveConfig() end
                 end
                 keyBtn.MouseButton1Click:Connect(function()
                         if kListening then kStop(nil); return end
-                        kListening=true; keyBtn.Text="..."; keyBtn.TextColor3=Color3.fromRGB(255, 255, 255)
-                        TweenService:Create(ks,TweenInfo.new(0.12),{Color=Color3.fromRGB(100, 200, 255)}):Play()
+                        kListening=true; keyBtn.Text="..."; keyBtn.TextColor3=Color3.fromRGB(255,255,255)
+                        TweenService:Create(ks,TweenInfo.new(0.12),{Color=Color3.fromRGB(180,180,220)}):Play()
                         kConn=UIS.InputBegan:Connect(function(inp, gp)
                                 if not kListening then return end
                                 if inp.UserInputType == Enum.UserInputType.Keyboard then
@@ -1521,19 +1306,19 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
                 local keyDisplayName = (currentKey and currentKey ~= Enum.KeyCode.Unknown) and currentKey.Name or "-"
                 
                 newKeyBtn = Instance.new("TextButton", row)
-                newKeyBtn.Size = UDim2.new(0, 56, 0, 20)
-                newKeyBtn.Position = UDim2.new(1, -106, 0.5, -10)
-                newKeyBtn.BackgroundColor3 = Color3.fromRGB(5, 8, 18)
+                newKeyBtn.Size = UDim2.new(0, 52, 0, 18)
+                newKeyBtn.Position = UDim2.new(1, -102, 0.5, -9)
+                newKeyBtn.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
                 newKeyBtn.BorderSizePixel = 0
                 newKeyBtn.Text = keyDisplayName
-                newKeyBtn.TextColor3 = Color3.fromRGB(100, 180, 255)
+                newKeyBtn.TextColor3 = Color3.fromRGB(180, 180, 210)
                 newKeyBtn.Font = Enum.Font.GothamBold
-                newKeyBtn.TextSize = 10
+                newKeyBtn.TextSize = 9
                 newKeyBtn.AutoButtonColor = false
                 newKeyBtn.ZIndex = 6
                 Instance.new("UICorner", newKeyBtn).CornerRadius = UDim.new(0, 4)
                 local nks = Instance.new("UIStroke", newKeyBtn)
-                nks.Color = Color3.fromRGB(50, 110, 210)
+                nks.Color = Color3.fromRGB(90, 90, 120)
                 nks.Thickness = 1
 
                 local nkListening = false
@@ -1541,8 +1326,8 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
                 local function nkStop(key)
                         nkListening = false
                         if nkConn then nkConn:Disconnect(); nkConn = nil end
-                        TweenService:Create(nks, TweenInfo.new(0.12), {Color=Color3.fromRGB(50, 110, 210)}):Play()
-                        newKeyBtn.TextColor3 = Color3.fromRGB(100, 180, 255)
+                        TweenService:Create(nks, TweenInfo.new(0.12), {Color=Color3.fromRGB(90, 90, 120)}):Play()
+                        newKeyBtn.TextColor3 = Color3.fromRGB(180, 180, 210)
                         if key then
                                 State[keybindStateKey] = key
                                 newKeyBtn.Text = key.Name
@@ -1554,7 +1339,7 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
                         nkListening = true
                         newKeyBtn.Text = "..."
                         newKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        TweenService:Create(nks, TweenInfo.new(0.12), {Color=Color3.fromRGB(100, 200, 255)}):Play()
+                        TweenService:Create(nks, TweenInfo.new(0.12), {Color=Color3.fromRGB(180, 180, 220)}):Play()
                         nkConn = UIS.InputBegan:Connect(function(inp, gp)
                                 if not nkListening then return end
                                 if inp.UserInputType == Enum.UserInputType.Keyboard then
@@ -1567,18 +1352,17 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
                 end)
         end
 
-        -- Toggle pill
-        local pillBg=Instance.new("Frame",row); pillBg.Size=UDim2.new(0,42,0,22); pillBg.Position=UDim2.new(1,-48,0.5,-11)
+        local pillBg=Instance.new("Frame",row); pillBg.Size=UDim2.new(0,38,0,20); pillBg.Position=UDim2.new(1,-44,0.5,-10)
         pillBg.BackgroundColor3=defaultOn and C_ON_BG or C_OFF_BG; pillBg.BorderSizePixel=0; pillBg.ZIndex=5
         Instance.new("UICorner",pillBg).CornerRadius=UDim.new(1,0)
         local pStroke=Instance.new("UIStroke",pillBg)
-        pStroke.Color=defaultOn and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 80, 160)
-        pStroke.Thickness=1.5
+        pStroke.Color=defaultOn and Color3.fromRGB(150,150,190) or Color3.fromRGB(70,70,90)
+        pStroke.Thickness=1
         
         local dot=Instance.new("Frame",pillBg)
-        dot.Size=UDim2.new(0,16,0,16)
-        dot.Position=defaultOn and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8)
-        dot.BackgroundColor3=defaultOn and Color3.fromRGB(180, 230, 255) or Color3.fromRGB(60, 120, 200)
+        dot.Size=UDim2.new(0,14,0,14)
+        dot.Position=defaultOn and UDim2.new(1,-17,0.5,-7) or UDim2.new(0,3,0.5,-7)
+        dot.BackgroundColor3=defaultOn and Color3.fromRGB(220,220,240) or Color3.fromRGB(130,130,160)
         dot.BorderSizePixel=0; dot.ZIndex=6
         Instance.new("UICorner",dot).CornerRadius=UDim.new(1,0)
         
@@ -1586,10 +1370,10 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
         local function setV(on)
                 isOn=on
                 TweenService:Create(pillBg,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{BackgroundColor3=on and C_ON_BG or C_OFF_BG}):Play()
-                TweenService:Create(pStroke,TweenInfo.new(0.2),{Color=on and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 80, 160)}):Play()
+                TweenService:Create(pStroke,TweenInfo.new(0.2),{Color=on and Color3.fromRGB(150,150,190) or Color3.fromRGB(70,70,90)}):Play()
                 TweenService:Create(dot,TweenInfo.new(0.2,Enum.EasingStyle.Back),{
-                        Position=on and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8),
-                        BackgroundColor3=on and Color3.fromRGB(180, 230, 255) or Color3.fromRGB(60, 120, 200)
+                        Position=on and UDim2.new(1,-17,0.5,-7) or UDim2.new(0,3,0.5,-7),
+                        BackgroundColor3=on and Color3.fromRGB(220,220,240) or Color3.fromRGB(130,130,160)
                 }):Play()
         end
         
@@ -1608,27 +1392,24 @@ local function makeToggleRow(label, defaultKey, defaultOn, onToggle, onKeyChange
         return setV, keyBtn or newKeyBtn
 end
 
--- ================= BUILD THE INTERFACE =================
-makeSectionLabel("⚡ Speed")
+makeSectionLabel("Speed")
 normalBox = makeInputRow("Normal Speed", State.normalSpeed, function(v) local n=tonumber(v); if n and n>0 and n<=500 then State.normalSpeed=n end end)
 carryBox  = makeInputRow("Carry Speed",  State.carrySpeed,  function(v) local n=tonumber(v); if n and n>0 and n<=500 then State.carrySpeed=n  end end)
 laggerBox = makeInputRow("Lagger Normal", State.laggerSpeed, function(v) local n=tonumber(v); if n and n>0 and n<=500 then State.laggerSpeed=n end end)
 carryLaggerBox = makeInputRow("Lagger Steal", State.laggerCarrySpeed, function(v) local n=tonumber(v); if n and n>0 and n<=500 then State.laggerCarrySpeed=n end end)
 modeValLbl = makeStatusRow("Active Mode","Normal")
-makeGap(10)
 
-makeSectionLabel("⚔ Combat")
+makeSectionLabel("Combat")
 setAutoBat = makeToggleRow("Auto Bat", nil, false,
         function(on) State.autoBatToggled=on; if MobileButtons.Buttons.autoBat then MobileButtons.Buttons.autoBat(on) end end,
         nil, "keyAutoBat")
-makeGap(10)
 
-makeSectionLabel("🔧 Mechanics")
+makeSectionLabel("Mechanics")
 local radiusBox = makeInputRow("Grab Radius", AutoSteal.Radius, function(v)
         local n = tonumber(v)
         if n and n >= 5 and n <= 300 then
                 AutoSteal.Radius = math.floor(n)
-                if progressRadLbl then progressRadLbl.Text = "Steal Radius: "..AutoSteal.Radius end
+                if progressRadLbl then progressRadLbl.Text = "Radius: "..AutoSteal.Radius end
         end
 end)
 setInstaGrab = makeToggleRow("Auto Grab", nil, true, function(on)
@@ -1637,48 +1418,47 @@ setInstaGrab = makeToggleRow("Auto Grab", nil, true, function(on)
 end)
 setInfJump = makeToggleRow("Infinite Jump", nil, true, function(on) State.infJumpEnabled=on end)
 
--- Jump Mode container
 local jumpModeContainer = Instance.new("Frame", scroll)
-jumpModeContainer.Size = UDim2.new(1,0,0,36)
+jumpModeContainer.Size = UDim2.new(1,0,0,32)
 jumpModeContainer.BackgroundTransparency = 1
 jumpModeContainer.BorderSizePixel = 0
 jumpModeContainer.LayoutOrder = LO()
 
 local manuelBtn = Instance.new("TextButton", jumpModeContainer)
-manuelBtn.Size = UDim2.new(0.5,-3,1,0)
+manuelBtn.Size = UDim2.new(0.5,-2,1,0)
 manuelBtn.Position = UDim2.new(0,0,0,0)
 manuelBtn.BackgroundColor3 = C_ON_BG
 manuelBtn.BorderSizePixel = 0
 manuelBtn.Text = "Manual"
-manuelBtn.TextColor3 = Color3.fromRGB(180, 220, 255)
+manuelBtn.TextColor3 = Color3.fromRGB(220,220,240)
 manuelBtn.Font = Enum.Font.GothamBold
-manuelBtn.TextSize = 12
+manuelBtn.TextSize = 11
 manuelBtn.AutoButtonColor = false
 manuelBtn.ZIndex = 5
-Instance.new("UICorner", manuelBtn).CornerRadius = UDim.new(0,8)
-Instance.new("UIStroke", manuelBtn).Color = Color3.fromRGB(80, 160, 255)
+Instance.new("UICorner", manuelBtn).CornerRadius = UDim.new(0,6)
+Instance.new("UIStroke", manuelBtn).Color = Color3.fromRGB(150,150,190)
 
 local holdBtn = Instance.new("TextButton", jumpModeContainer)
-holdBtn.Size = UDim2.new(0.5,-3,1,0)
-holdBtn.Position = UDim2.new(0.5,3,0,0)
+holdBtn.Size = UDim2.new(0.5,-2,1,0)
+holdBtn.Position = UDim2.new(0.5,2,0,0)
 holdBtn.BackgroundColor3 = C_OFF_BG
 holdBtn.BorderSizePixel = 0
 holdBtn.Text = "Hold"
-holdBtn.TextColor3 = Color3.fromRGB(100, 160, 220)
+holdBtn.TextColor3 = Color3.fromRGB(150,150,180)
 holdBtn.Font = Enum.Font.GothamBold
-holdBtn.TextSize = 12
+holdBtn.TextSize = 11
 holdBtn.AutoButtonColor = false
 holdBtn.ZIndex = 5
-Instance.new("UICorner", holdBtn).CornerRadius = UDim.new(0,8)
-Instance.new("UIStroke", holdBtn).Color = Color3.fromRGB(40, 80, 160)
+Instance.new("UICorner", holdBtn).CornerRadius = UDim.new(0,6)
+Instance.new("UIStroke", holdBtn).Color = Color3.fromRGB(70,70,90)
 
 local function updateInfJumpModeUI()
         if State.infJumpMode == "manual" then
-                manuelBtn.BackgroundColor3 = C_ON_BG; manuelBtn.TextColor3 = Color3.fromRGB(180, 220, 255)
-                holdBtn.BackgroundColor3 = C_OFF_BG; holdBtn.TextColor3 = Color3.fromRGB(100, 160, 220)
+                manuelBtn.BackgroundColor3 = C_ON_BG; manuelBtn.TextColor3 = Color3.fromRGB(220,220,240)
+                holdBtn.BackgroundColor3 = C_OFF_BG; holdBtn.TextColor3 = Color3.fromRGB(150,150,180)
         else
-                manuelBtn.BackgroundColor3 = C_OFF_BG; manuelBtn.TextColor3 = Color3.fromRGB(100, 160, 220)
-                holdBtn.BackgroundColor3 = C_ON_BG; holdBtn.TextColor3 = Color3.fromRGB(180, 220, 255)
+                manuelBtn.BackgroundColor3 = C_OFF_BG; manuelBtn.TextColor3 = Color3.fromRGB(150,150,180)
+                holdBtn.BackgroundColor3 = C_ON_BG; holdBtn.TextColor3 = Color3.fromRGB(220,220,240)
         end
 end
 
@@ -1716,9 +1496,7 @@ setUnwalkToggle = makeToggleRow("Unwalk", nil, false, function(on)
         if on then startUnwalk() else stopUnwalk() end
 end)
 
-makeGap(10)
-
-makeSectionLabel("📍 Teleport / Movement")
+makeSectionLabel("Movement")
 setMenuDropBR = makeToggleRow("Drop Brainrot", nil, false, function(on)
         if on then
                 runDropBrainrot()
@@ -1773,36 +1551,12 @@ setAutoRight = makeToggleRow("Auto Right", nil, false,
                 if on then startAutoRight() else stopAutoRight() end
         end, nil, "keyAutoRight")
 
-makeGap(10)
-
--- Mobile Buttons section
-makeSectionLabel("📱 Mobile Buttons")
-
+makeSectionLabel("Mobile")
 local setLockToggle = makeToggleRow("Lock Cubes", nil, true, function(on)
         MobileButtons.Locked = on
         autoSaveConfig()
 end)
 
-makeGap(6)
-
-local autoSaveLbl = Instance.new("TextLabel", scroll)
-autoSaveLbl.Size = UDim2.new(1,0,0,18)
-autoSaveLbl.BackgroundTransparency = 1
-autoSaveLbl.Text = "◉ Config Auto Save: ON"
-autoSaveLbl.TextColor3 = Color3.fromRGB(100, 200, 255)
-autoSaveLbl.Font = Enum.Font.GothamBold
-autoSaveLbl.TextSize = 10
-autoSaveLbl.TextXAlignment = Enum.TextXAlignment.Center
-autoSaveLbl.LayoutOrder = LO()
-
-makeGap(4)
-
-local footerLbl = Instance.new("TextLabel",scroll)
-footerLbl.Size=UDim2.new(1,0,0,20); footerLbl.BackgroundTransparency=1; footerLbl.LayoutOrder=LO()
-footerLbl.Text="yo hub duels · v2.0"; footerLbl.TextColor3=Color3.fromRGB(80, 150, 230)
-footerLbl.Font=Enum.Font.GothamBlack; footerLbl.TextSize=11; footerLbl.TextXAlignment=Enum.TextXAlignment.Center
-
--- ========== KEYBIND LISTENER ==========
 UIS.InputBegan:Connect(function(inp, gp)
         if gp then return end
         local kc = inp.KeyCode
@@ -1874,7 +1628,6 @@ UIS.InputBegan:Connect(function(inp, gp)
         end
 end)
 
--- ========== MEDUSA, ETC. ==========
 local function findMedusa()
         local char=LP.Character; if not char then return nil end
         for _,tool in ipairs(char:GetChildren()) do
@@ -2111,7 +1864,7 @@ local function loadConfig()
         if type(cfg.laggerActive) == "boolean" then State.laggerActive = cfg.laggerActive end
         if type(cfg.laggerCarryActive) == "boolean" then State.laggerCarryActive = cfg.laggerCarryActive end
         if cfg.grabRadius and type(cfg.grabRadius)=="number" then
-                AutoSteal.Radius=cfg.grabRadius; radiusBox.Text=tostring(cfg.grabRadius); if progressRadLbl then progressRadLbl.Text="Steal Radius: "..cfg.grabRadius end end
+                AutoSteal.Radius=cfg.grabRadius; radiusBox.Text=tostring(cfg.grabRadius); if progressRadLbl then progressRadLbl.Text="Radius: "..cfg.grabRadius end end
         if cfg.autoStealEnabled then AutoSteal.Enabled=true; setInstaGrab(true); pcall(startAutoSteal) end
         if cfg.infJump     then State.infJumpEnabled=true;       setInfJump(true)  end
         if cfg.infJumpMode == "manual" or cfg.infJumpMode == "hold" then
@@ -2182,7 +1935,7 @@ local function setupChar(char)
                 local bb=Instance.new("BillboardGui",head)
                 bb.Name="SpeedBillboard"; bb.Size=UDim2.new(0,140,0,25); bb.StudsOffset=Vector3.new(0,3,0); bb.AlwaysOnTop=true
                 speedLbl=Instance.new("TextLabel",bb); speedLbl.Size=UDim2.new(1,0,1,0)
-                speedLbl.BackgroundTransparency=1; speedLbl.TextColor3=Color3.fromRGB(120, 200, 255)
+                speedLbl.BackgroundTransparency=1; speedLbl.TextColor3=Color3.fromRGB(190,190,210)
                 speedLbl.Font=Enum.Font.GothamBold; speedLbl.TextScaled=true; speedLbl.TextStrokeTransparency=0
         end
         if State.antiRagdollEnabled and not Conns.antiRag then task.wait(0.5); startAntiRagdoll() end
@@ -2251,7 +2004,6 @@ RunService.RenderStepped:Connect(function()
 
         local md = h.MoveDirection
         local spd = getCurrentSpeed()
-        applyCurrentSpeed()
 
         if md.Magnitude > 0 then
                 State.lastMoveDir = md
@@ -2300,19 +2052,18 @@ task.spawn(function()
         while task.wait(0.5) do
                 pcall(function() 
                         if progressRadLbl then
-                                progressRadLbl.Text = "Steal Radius: "..AutoSteal.Radius
+                                progressRadLbl.Text = "Radius: "..AutoSteal.Radius
                         end
                 end)
         end
 end)
 
 loadMainPosition()
-loadMiniPosition()
+loadSettingsPosition()
 loadStealBarPosition()
 refreshUIToggles()
 loadConfig()
 
--- ========== DEFAULT-ON ACTIVATIONS ==========
 task.spawn(function()
         task.wait(1)
         if AutoSteal.Enabled then pcall(startAutoSteal) end
